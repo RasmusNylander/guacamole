@@ -11,6 +11,9 @@ import torchvision.transforms as transforms
 import numpy as np
 import json
 
+import warnings
+warnings.filterwarnings('ignore')
+
 
 class DatasetType(Enum):
 	all = 0
@@ -129,16 +132,38 @@ class TACO(torch.utils.data.Dataset):
 	def __len__(self) -> int:
 		return len(self.tacoitems)
 
-	def __getitem__(self, index):
-		tacoitem = self.tacoitems[self.img_ids[index]]
+	def resize(self, image, bboxs, resize_to = 600):
+
+		resized_image = torchvision.transforms.functional.resize(image, size = (resize_to, resize_to))
+
+		x_fraction = resize_to / image.shape[2]
+		y_fraction = resize_to / image.shape[1]
+
+		scaler = torch.tensor([x_fraction, y_fraction]*2)
+
+		resized_bboxs = bboxs * scaler
+		return resized_image, resized_bboxs
+
+	def __getitem__(self, id):
+		tacoitem = self.tacoitems[id]
 		image = torchvision.io.read_image(tacoitem.path)
-		return image, tacoitem.bboxs, tacoitem.categories
+		reized_image, resized_bboxs = self.resize(image, tacoitem.bboxs) 
+		return reized_image, resized_bboxs, tacoitem.categories
 
 
 
 if __name__ == '__main__':
 	dataset = TACO()
-	id = 0
-	print(dataset[id])
+	id = 1
+	image, bboxs, cats = dataset[id]
+
+	import matplotlib.pyplot as plt
+	from matplotlib.patches import Polygon, Rectangle
+	fig,ax = plt.subplots(1)
+	plt.imshow(image.permute(1, 2, 0).numpy())
+	x, y, w, h = bboxs[0].numpy()
+	rect = Rectangle((x,y),w,h,linewidth=2, facecolor='none', edgecolor='orange')
+	ax.add_patch(rect)
+	plt.savefig("try_resized.png")
 
 
