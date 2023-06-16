@@ -145,7 +145,7 @@ class TACO(torch.utils.data.Dataset):
 		return resized_image, resized_bboxs
 
 	def __getitem__(self, id):
-		tacoitem = self.tacoitems[id]
+		tacoitem = self.tacoitems[self.img_ids[id]]
 		image = torchvision.io.read_image(tacoitem.path)
 		reized_image, resized_bboxs = self.resize(image, tacoitem.bboxs) 
 		return reized_image, resized_bboxs, tacoitem.categories
