@@ -1,3 +1,4 @@
+print('importing things...')
 import os
 from enum import Enum
 from os import PathLike
@@ -154,16 +155,36 @@ class TACO(torch.utils.data.Dataset):
 
 if __name__ == '__main__':
 	dataset = TACO()
-	id = 1
+	id = 3
 	image, bboxs, cats = dataset[id]
 
 	import matplotlib.pyplot as plt
-	from matplotlib.patches import Polygon, Rectangle
+	from matplotlib.patches import Rectangle
+
 	fig,ax = plt.subplots(1)
 	plt.imshow(image.permute(1, 2, 0).numpy())
 	x, y, w, h = bboxs[0].numpy()
 	rect = Rectangle((x,y),w,h,linewidth=2, facecolor='none', edgecolor='orange')
 	ax.add_patch(rect)
 	plt.savefig("try_resized.png")
+
+	print('example with variable size inpuut (bboxs / categories)')
+	
+	def collate(batch):
+		image = [item[0] for item in batch]
+		bboxs = [item[1] for item in batch]
+		categories = [item[2] for item in batch]
+		return [image, bboxs, categories]
+
+	batch_size = 64
+	train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=3, collate_fn=collate)
+
+
+
+	for batch_img, batch_bboxs, batch_cats in train_loader:
+		print(len(batch_img), batch_img[0].shape, batch_bboxs[0].shape, batch_cats[0].shape)
+
+
+	
 
 
