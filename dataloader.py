@@ -2,7 +2,7 @@ print('importing things...')
 import os
 from enum import Enum
 from os import PathLike
-from typing import Optional, Type
+from typing import Optional, Type, Union
 
 import torch
 import torchvision.transforms.functional
@@ -83,10 +83,11 @@ class TACO(torch.utils.data.Dataset):
 	TRAINING_INDICES = np.setdiff1d(ALL_INDICES,TEST_INDICES+VALIDATION_INDICES)
 
 
-	def __init__(self, root_dir: PathLike="/dtu/datasets1/02514/data_wastedetection", ds_type: DatasetType = DatasetType.all, data_augmentation= None):
+	def __init__(self, root_dir: PathLike="/dtu/datasets1/02514/data_wastedetection", ds_type: DatasetType = DatasetType.all, data_augmentation = None, resize_to:int = 600):
 		self.root_dir = root_dir
 		self.type = ds_type
 		self.data_augmentation = data_augmentation
+		self.resize_to = resize_to
 		self.tacoitems = {}
 
 		if DatasetType.train == self.type:
@@ -133,12 +134,12 @@ class TACO(torch.utils.data.Dataset):
 	def __len__(self) -> int:
 		return len(self.tacoitems)
 
-	def resize(self, image, bboxs, resize_to = 600):
+	def resize(self, image, bboxs):
 
-		resized_image = torchvision.transforms.functional.resize(image, size = (resize_to, resize_to))
+		resized_image = torchvision.transforms.functional.resize(image, size = (self.resize_to, self.resize_to))
 
-		x_fraction = resize_to / image.shape[2]
-		y_fraction = resize_to / image.shape[1]
+		x_fraction = self.resize_to / image.shape[2]
+		y_fraction = self.resize_to / image.shape[1]
 
 		scaler = torch.tensor([x_fraction, y_fraction]*2)
 
@@ -169,7 +170,7 @@ if __name__ == '__main__':
 	plt.savefig("try_resized.png")
 
 	print('example with variable size inpuut (bboxs / categories)')
-	
+
 	def collate(batch):
 		image = [item[0] for item in batch]
 		bboxs = [item[1] for item in batch]
