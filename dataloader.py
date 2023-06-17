@@ -1,4 +1,4 @@
-print('importing things...')
+
 import os
 from enum import Enum
 from os import PathLike
@@ -134,7 +134,11 @@ class TACO(torch.utils.data.Dataset):
 	def __len__(self) -> int:
 		return len(self.tacoitems)
 
-	def resize(self, image, bboxs):
+	def resize(self, image: Tensor, bboxs: Tensor) -> tuple:
+		"""
+		image shape: [1, x, y] --> [1, self.resize_to, self.resize_to]
+		bboxs shape: [1, n, 4] --> [1, n, 4] (but changed values)
+		"""
 
 		resized_image = torchvision.transforms.functional.resize(image, size = (self.resize_to, self.resize_to))
 
@@ -146,7 +150,7 @@ class TACO(torch.utils.data.Dataset):
 		resized_bboxs = bboxs * scaler
 		return resized_image, resized_bboxs
 
-	def __getitem__(self, id):
+	def __getitem__(self, id:int) -> tuple:
 		tacoitem = self.tacoitems[self.img_ids[id]]
 		image = torchvision.io.read_image(tacoitem.path)
 		reized_image, resized_bboxs = self.resize(image, tacoitem.bboxs) 
@@ -171,7 +175,7 @@ if __name__ == '__main__':
 
 	print('example with variable size inpuut (bboxs / categories)')
 
-	def collate(batch):
+	def collate(batch: list) -> list:
 		image = [item[0] for item in batch]
 		bboxs = [item[1] for item in batch]
 		categories = [item[2] for item in batch]
