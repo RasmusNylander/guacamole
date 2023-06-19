@@ -164,9 +164,13 @@ def collate(batch: list[tuple[Tensor, Tensor, Tensor]]) -> list[list[Tensor]]:  
 	return [image, bboxs, categories]
 
 
-def make_dataloader(batch_size: int, dataset_path_override: Optional[str], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
-	train_dataset = TACO(dataset_path_override)
-	validation_dataset, test_dataset = TACO(dataset_path_override), TACO(dataset_path_override)
+def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
+	if dataset_path_override is not None:
+		train_dataset = TACO(dataset_path_override, DatasetType.train)
+		validation_dataset, test_dataset = TACO(dataset_path_override, DatasetType.valid), TACO(dataset_path_override, DatasetType.test)
+	else:
+		train_dataset = TACO(ds_type=DatasetType.train)
+		validation_dataset, test_dataset = TACO(ds_type=DatasetType.valid), TACO(ds_type=DatasetType.test)
 
 	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate)
 	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
