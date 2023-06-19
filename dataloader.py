@@ -232,12 +232,13 @@ class Proposals(torch.utils.data.Dataset):
 
 		proposal, category = self.sample_index(idx)
 		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
-		patch = image[:, x:x2, y:y2]
 
-		while patch.shape[1] < 2 or patch.shape[2] < 2:
+		while x2 - x < 2 or y2 - y < 2:
 			print("patch too small, resampling", file=sys.stderr)
 			proposal, category = self.sample_index(idx)
 			x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+
+		patch = image[:, x:x2, y:y2]
 
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		category = torch.nn.functional.one_hot(category, num_classes=60)
