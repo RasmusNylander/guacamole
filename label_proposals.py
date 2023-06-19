@@ -18,7 +18,7 @@ ann_cat     = torch.tensor([ann['category_id'] for ann in annotations])
 ann_img_id  = torch.tensor([ann['image_id'] for ann in annotations])
 
 image_info  = dataset['images']
-img_hw      = torch.tensor([[img['width'],img['height']] for img in image_info])
+img_hw      = torch.tensor([[img['height'],img['width']] for img in image_info])
 
 bb_file_path = os.path.join(root_dir, "bounding_boxes_fast.pt")
 proposals = torch.load(bb_file_path)
@@ -29,8 +29,8 @@ for img_id,prop_bb in enumerate(proposals):
     true_bb = ann_bb[ann_img_id==img_id]
     cat_bb  = ann_cat[ann_img_id==img_id]
 
-    x_fraction = resize_to / img_hw[img_id,1]
-    y_fraction = resize_to / img_hw[img_id,0]
+    x_fraction = resize_to / img_hw[img_id,0]
+    y_fraction = resize_to / img_hw[img_id,1]
     scaler = torch.tensor([x_fraction, y_fraction]*2)
     true_bb = true_bb * scaler
 
