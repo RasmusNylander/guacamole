@@ -160,9 +160,6 @@ class TACO(torch.utils.data.Dataset):
 		resized_bboxs = bboxs * scaler
 		return resized_image, resized_bboxs
 
-	def get_img_id_by_idx(self, idx):
-		return img_id
-
 
 	def __getitem__(self, id:int) -> tuple:
 		tacoitem = self.tacoitems[self.img_ids[id]]
@@ -195,14 +192,18 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 
 
 class Proposals(torch.utils.data.Dataset):
-	def __init__(self):
-		self.taco = TACO(ds_type=DatasetType.train)
-		self.bboxs = torch.load("proposals/bounding_boxes_quality_and_true.pt")[TACO.img_ids] # both proposal and gt
-		self.cumsum_proposal_ids = np.cumsum([len(x) for x in self.bboxs])
-		self.categories = torch.load("proposals/bounding_boxes_qual_categories_and true.pt")[TACO.img_ids] # both proposal and gt
+	BACKGROUND_INDEX = 60
+
+	def __init__(self, root_dir: PathLike = "/dtu/datasets1/02514/data_wastedetection"):
+		self.taco = TACO(root_dir, ds_type=DatasetType.train)
+		self.bboxs = torch.load("proposals/bounding_boxes_quality_X.pt") # both proposal and gt
+		self.bboxs = [self.bboxs[index] for index in self.taco.img_ids]
+		# self.cumsum_proposal_ids = np.cumsum([len(x) for x in self.bboxs])
+		self.categories = torch.load("proposals/bounding_boxes_qual_categories_X.pt") # both proposal and gt
+		self.categories = [self.categories[index] for index in self.taco.img_ids]
 
 	def __len__(self):
-		return len(self.categories.flatten())
+		return 4*len(self.taco)
 
 	def idx_to_image_and_proposal_id(self, idx):
 		image_idx = self.cumsum(self.cumsum_proposal_ids <= idx).argmax()
@@ -210,30 +211,52 @@ class Proposals(torch.utils.data.Dataset):
 
 		return image_idx, proposal_idx
 
+	def sample_index(self, index: int, background: bool = False) -> tuple[Tensor, Tensor]:
+		taco_index = index // 4
+		proposals = self.bboxs[taco_index]
+		proposal_categories = self.categories[taco_index]
+
+		if background:
+			mask = proposal_categories == self.BACKGROUND_INDEX
+		else:
+			mask = proposal_categories != self.BACKGROUND_INDEX
+
+		proposals = proposals[mask]
+		proposal_categories = proposal_categories[mask]
+
+		proposal_index = torch.randint(0, proposals.shape[0], (1,)).item()
+		proposal = proposals[proposal_index]
+		category = proposal_categories[proposal_index]
+		return proposal.int(), category
+
+
 	def __getitem__(self, idx):
-		image_idx, proposal_idx = self.idx_to_image_and_proposal_id(idx)
+		proposal, category = self.sample_index(idx)
 
-		bbox = self.bboxs[image_idx][proposal_idx]
-		category = self.categories[image_idx][proposal_idx]
+		taco_index = idx // 4
 
-		image = torchvision.io.read_image(self.taco[image_idx].path)
-		patch = image[:, bbox[0] : bbox[0] + bbox[2], bbox[1] : bbox[1] + bbox[3]]
+		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
+		image = torchvision.io.read_image(image_path)
+		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+		patch = image[:, x:x2, y:y2]
 
 		return patch, category
 
 
 
 
-
-
-
-
-
 if __name__ == '__main__':
+	# tep = Proposals("D:\\data")
+	tep = Proposals()
+	print(tep[0])
+
 	datapath = None
 	# datapath = "D:\\data"
 
-	dataset = TACO()
+	if datapath is not None:
+		dataset = TACO(datapath)
+	else:
+		dataset = TACO()
 	id = 0
 	image, bboxs, cats = dataset[id]
 	print(bboxs)
