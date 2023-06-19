@@ -90,7 +90,7 @@ class TACO(torch.utils.data.Dataset):
 		self.type = ds_type
 		self.data_augmentation = data_augmentation
 		self.resize_to = resize_to
-		self.tacoitems = {}
+		self.tacoitems = {} # [img_id: TACOItem(), ...]
 
 		if DatasetType.train == self.type:
 			self.img_ids = TACO.TRAINING_INDICES
@@ -160,6 +160,10 @@ class TACO(torch.utils.data.Dataset):
 		resized_bboxs = bboxs * scaler
 		return resized_image, resized_bboxs
 
+	def get_img_id_by_idx(self, idx):
+		return img_id
+
+
 	def __getitem__(self, id:int) -> tuple:
 		tacoitem = self.tacoitems[self.img_ids[id]]
 		image = torchvision.io.read_image(tacoitem.path)
@@ -187,6 +191,42 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
 
 	return train_loader, validation_loader, test_loader
+
+
+
+class Proposals(torch.utils.data.Dataset):
+	def __init__(self):
+		self.taco = TACO(ds_type=DatasetType.train)
+		self.bboxs = torch.load("proposals/bounding_boxes_quality_and_true.pt")[TACO.img_ids] # both proposal and gt
+		self.cumsum_proposal_ids = np.cumsum([len(x) for x in self.bboxs])
+		self.categories = torch.load("proposals/bounding_boxes_qual_categories_and true.pt")[TACO.img_ids] # both proposal and gt
+
+	def __len__(self):
+		return len(self.categories.flatten())
+
+	def idx_to_image_and_proposal_id(self, idx):
+		image_idx = self.cumsum(self.cumsum_proposal_ids <= idx).argmax()
+		proposal_idx = idx - self.cumsum_proposal_ids[image_idx]
+
+		return image_idx, proposal_idx
+
+	def __getitem__(self, idx):
+		image_idx, proposal_idx = self.idx_to_image_and_proposal_id(idx)
+
+		bbox = self.bboxs[image_idx][proposal_idx]
+		category = self.categories[image_idx][proposal_idx]
+
+		image = torchvision.io.read_image(self.taco[image_idx].path)
+		patch = image[:, bbox[0] : bbox[0] + bbox[2], bbox[1] : bbox[1] + bbox[3]]
+
+		return patch, category
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
