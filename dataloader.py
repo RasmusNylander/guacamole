@@ -157,9 +157,29 @@ class TACO(torch.utils.data.Dataset):
 		return reized_image, resized_bboxs, tacoitem.categories
 
 
+def collate(batch: list[tuple[Tensor, Tensor, Tensor]]) -> list[list[Tensor]]:  # Must be here, otherwise it cannot be pickled
+	image = [item[0] for item in batch]
+	bboxs = [item[1] for item in batch]
+	categories = [item[2] for item in batch]
+	return [image, bboxs, categories]
+
+
+def make_dataloader(batch_size: int, dataset_path_override: Optional[str], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
+	train_dataset = TACO(dataset_path_override)
+	validation_dataset, test_dataset = TACO(dataset_path_override), TACO(dataset_path_override)
+
+	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate)
+	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
+	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
+
+	return train_loader, validation_loader, test_loader
+
 
 if __name__ == '__main__':
-	dataset = TACO()
+	datapath = None
+	# datapath = "D:\\data"
+
+	dataset = TACO(datapath)
 	id = 3
 	image, bboxs, cats = dataset[id]
 
@@ -182,8 +202,8 @@ if __name__ == '__main__':
 		return [image, bboxs, categories]
 
 	batch_size = 64
-	train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=3, collate_fn=collate)
-
+	# train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=3, collate_fn=collate)
+	train_loader, _, _ = make_dataloader(batch_size, datapath, 1)
 
 
 	for batch_img, batch_bboxs, batch_cats in train_loader:
