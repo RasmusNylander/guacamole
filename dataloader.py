@@ -193,6 +193,7 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 
 class Proposals(torch.utils.data.Dataset):
 	BACKGROUND_INDEX = 60
+	PROPOSALS_PER_IMAGE = 4
 
 	def __init__(self, root_dir: PathLike = "/dtu/datasets1/02514/data_wastedetection"):
 		self.taco = TACO(root_dir, ds_type=DatasetType.train)
@@ -203,7 +204,7 @@ class Proposals(torch.utils.data.Dataset):
 		self.categories = [self.categories[index] for index in self.taco.img_ids]
 
 	def __len__(self):
-		return 4*len(self.taco)
+		return Proposals.PROPOSALS_PER_IMAGE*len(self.taco)
 
 	def idx_to_image_and_proposal_id(self, idx):
 		image_idx = self.cumsum(self.cumsum_proposal_ids <= idx).argmax()
@@ -211,12 +212,12 @@ class Proposals(torch.utils.data.Dataset):
 
 		return image_idx, proposal_idx
 
-	def sample_index(self, index: int, background: bool = False) -> tuple[Tensor, Tensor]:
-		taco_index = index // 4
+	def sample_index(self, index: int) -> tuple[Tensor, Tensor]:
+		taco_index = index // Proposals.PROPOSALS_PER_IMAGE
 		proposals = self.bboxs[taco_index]
 		proposal_categories = self.categories[taco_index]
 
-		if background:
+		if index % 4 == 0:
 			mask = proposal_categories == self.BACKGROUND_INDEX
 		else:
 			mask = proposal_categories != self.BACKGROUND_INDEX
@@ -233,7 +234,7 @@ class Proposals(torch.utils.data.Dataset):
 	def __getitem__(self, idx):
 		proposal, category = self.sample_index(idx)
 
-		taco_index = idx // 4
+		taco_index = idx // Proposals.PROPOSALS_PER_IMAGE
 
 		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
 		image = torchvision.io.read_image(image_path)
