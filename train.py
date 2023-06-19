@@ -1,5 +1,7 @@
+if __name__ == "__main__":
+	print("importing stuff...\n")
+
 import os
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
@@ -9,12 +11,9 @@ from torch import Tensor
 from tqdm import tqdm, trange
 
 import dataloader
+import metrics
 import networks
-from dataloader import TACO
 from networks import Architecture
-
-if __name__ == "__main__":
-	print("importing stuff...\n")
 
 import argparse
 import sys
@@ -24,7 +23,7 @@ device = assert_gpu()
 
 class EvalResult:
 
-	def __init__(self, loss: float):
+	def __init__(self, loss: float, iou: float):
 		self.loss = loss
 
 
@@ -35,10 +34,13 @@ def evaluate(
 	model.eval()
 	with torch.no_grad():
 		loss = torch.empty(len(test_loader))
+
 		for batch_number, (data, target) in enumerate(test_loader):
 			data, target = data.to(device), target.to(device)
 			output = model(data)
+
 			loss[batch_number] = loss_function(output, target).cpu().item()
+
 
 	loss = loss.mean().item()
 
@@ -60,8 +62,8 @@ def train(
 
 		train_loss_epoch = torch.empty((len(train_loader)), dtype=torch.float64)
 
-		for batch_number, (data, target, something) in enumerate(tqdm(train_loader, leave=False, unit="batches", position=1)):
-			data, target, something = data.to(device), target.to(device), something.to(device)
+		for batch_number, (data, target) in enumerate(tqdm(train_loader, leave=False, unit="batches", position=1)):
+			data, target = data.to(device), target.to(device)
 
 			optimiser.zero_grad()
 
@@ -175,7 +177,7 @@ if __name__ == "__main__":
 	# parser.add_argument('-a', '--augmentation', type=str, help='Data augmentation to use to use', default=[], nargs="+",
 	# 					choices=[aug for aug in data_augmentation.augmentations.keys()])
 
-	loss = lambda x: torch.tensor([0.1])
+	loss = metrics.cross_entropy
 
 	args = parser.parse_args()
 	name = args.name
