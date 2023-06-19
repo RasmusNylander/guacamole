@@ -1,5 +1,4 @@
 import os 
-os.chdir('guacamole')
 import json
 import torch
 from metrics import IoU
@@ -8,6 +7,7 @@ from dataloader import TACO,DatasetType
 iou_threshold   = 0.5
 resize_to       = 600
 
+os.chdir('guacamole')
 root_dir=os.getcwd()
 anns_file_path = os.path.join(root_dir, 'annotations.json')
 with open(anns_file_path, 'r') as f:
@@ -20,10 +20,11 @@ ann_img_id  = torch.tensor([ann['image_id'] for ann in annotations])
 image_info  = dataset['images']
 img_hw      = torch.tensor([[img['height'],img['width']] for img in image_info])
 
-bb_file_path = os.path.join(root_dir, "bounding_boxes_fast.pt")
+bb_file_path = os.path.join(root_dir, "bounding_boxes_quality.pt")
 proposals = torch.load(bb_file_path)
 
 
+proposals_cat = []
 for img_id,prop_bb in enumerate(proposals):
 
     true_bb = ann_bb[ann_img_id==img_id]
@@ -38,5 +39,9 @@ for img_id,prop_bb in enumerate(proposals):
     iou_bb = IoU(prop_bb,true_bb)
 
     prop_cat = cat_bb[iou_bb.argmax(1)]
-    prop_cat[iou_bb.max(1)[0]<0.5] = 60
+    prop_cat[iou_bb.max(1)[0]<iou_threshold] = 60
+    proposals_cat.append(prop_cat)
+
+
+torch.save(proposals_cat, f"bounding_boxes_qual_categories.pt")
 

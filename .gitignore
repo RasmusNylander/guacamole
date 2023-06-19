@@ -1,6 +1,9 @@
 data_wastedetection/
 annotations.json
 bounding_boxes_fast.pt
+bounding_boxes_fast_categories.pt
+bounding_boxes_quality.pt
+bounding_boxes_qual_categories.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
