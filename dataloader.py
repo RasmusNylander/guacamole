@@ -12,6 +12,8 @@ import torchvision.transforms as transforms
 import numpy as np
 import json
 
+import sys
+
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -142,6 +144,14 @@ class TACO(torch.utils.data.Dataset):
 
 		resized_image = torchvision.transforms.functional.resize(image, size = (self.resize_to, self.resize_to))
 
+		for i in range(bboxs.shape[0]):
+			if bboxs[i][2] > image.shape[2]:
+				bboxs[i][2] = image.shape[2]
+				print("width adjusted", sys.stderr)
+			if bboxs[i][3] > image.shape[1]:
+				bboxs[i][3] > image.shape[1]
+				print("height adjusted", sys.stderr)
+
 		x_fraction = self.resize_to / image.shape[2]
 		y_fraction = self.resize_to / image.shape[1]
 
@@ -183,9 +193,10 @@ if __name__ == '__main__':
 	datapath = None
 	# datapath = "D:\\data"
 
-	dataset = TACO(datapath)
-	id = 3
+	dataset = TACO()
+	id = 0
 	image, bboxs, cats = dataset[id]
+	print(bboxs)
 
 	import matplotlib.pyplot as plt
 	from matplotlib.patches import Rectangle
@@ -207,11 +218,11 @@ if __name__ == '__main__':
 
 	batch_size = 64
 	# train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=3, collate_fn=collate)
-	train_loader, _, _ = make_dataloader(batch_size, datapath, 1)
+	#train_loader, _, _ = make_dataloader(batch_size, datapath, 1)
 
 
-	for batch_img, batch_bboxs, batch_cats in train_loader:
-		print(len(batch_img), batch_img[0].shape, batch_bboxs[0].shape, batch_cats[0].shape)
+	#for batch_img, batch_bboxs, batch_cats in train_loader:
+#		print(len(batch_img), batch_img[0].shape, batch_bboxs[0].shape, batch_cats[0].shape)
 
 
 	
