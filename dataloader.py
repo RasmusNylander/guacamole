@@ -165,7 +165,7 @@ class TACO(torch.utils.data.Dataset):
 		tacoitem = self.tacoitems[self.img_ids[id]]
 		image = torchvision.io.read_image(tacoitem.path)
 		reized_image, resized_bboxs = self.resize(image, tacoitem.bboxs) 
-		return reized_image, resized_bboxs, tacoitem.categories
+		return reized_image, resized_bboxs, tacoitem.categories,
 
 
 def collate(batch: list[tuple[Tensor, Tensor, Tensor]]) -> list[list[Tensor]]:  # Must be here, otherwise it cannot be pickled
@@ -173,7 +173,6 @@ def collate(batch: list[tuple[Tensor, Tensor, Tensor]]) -> list[list[Tensor]]:  
 	bboxs = [item[1] for item in batch]
 	categories = [item[2] for item in batch]
 	return [image, bboxs, categories]
-
 
 
 class Proposals(torch.utils.data.Dataset):
@@ -204,6 +203,7 @@ class Proposals(torch.utils.data.Dataset):
 
 		if index % 4 == 0:
 			mask = proposal_categories == self.BACKGROUND_INDEX
+			proposal_categories = proposal_categories - 1 # background is 60, but we want 59
 		else:
 			mask = proposal_categories != self.BACKGROUND_INDEX
 
@@ -216,7 +216,7 @@ class Proposals(torch.utils.data.Dataset):
 		return proposal.int(), category
 
 
-	def __getitem__(self, idx):
+	def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
 		proposal, category = self.sample_index(idx)
 
 		taco_index = idx // Proposals.PROPOSALS_PER_IMAGE
@@ -225,6 +225,9 @@ class Proposals(torch.utils.data.Dataset):
 		image = torchvision.io.read_image(image_path)
 		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
 		patch = image[:, x:x2, y:y2]
+
+		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
+		category = torch.nn.functional.one_hot(category, num_classes=60)
 
 		return patch, category
 
@@ -237,7 +240,7 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 		train_dataset = Proposals()
 		validation_dataset, test_dataset = TACO(ds_type=DatasetType.valid), TACO(ds_type=DatasetType.test)
 
-	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate)
+	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
 	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
 
@@ -247,7 +250,9 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 if __name__ == '__main__':
 	# tep = Proposals("D:\\data")
 	tep = Proposals()
-	print(tep[0])
+	print(tep[0][0].shape)
+	print(tep[0][1].shape)
+	print("-------------------------------")
 
 	datapath = None
 	# datapath = "D:\\data"
