@@ -41,10 +41,6 @@ if __name__ == '__main__':
 
 	bounding_boxes = extract_proposals(dataset, fast=False, index=index)
 
-	# Read index from command line
-
-
-
 	print("Saving bounding boxes")
 	torch.save(bounding_boxes, f"bounding_boxes_quality_{index}.pt")
 	exit(0)
