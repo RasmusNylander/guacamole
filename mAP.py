@@ -57,17 +57,19 @@ def mAP_cal(ap_values):
 if __name__ == '__main__':
     path = './precision-recall_curve'
     num = 1 #TODO: Input the number for the precision-recall number if you want to generate the graphs
+    
     #For testing 
-    pred_scores = [0.7, 0.3, 0.5, 0.6, 0.55, 0.9, 0.4, 0.2, 0.4, 0.3]
+    pred_scores = [0.7, 0.3, 0.5, 0.6, 0.55, 0.9, 0.4, 0.2, 0.4, 0.3]  #TODO: The prediction input
     y_true = ["positive", "negative", "negative", "positive", "positive", 
-            "positive", "negative", "positive", "negative", "positive"]
-
+            "positive", "negative", "positive", "negative", "positive"] #TODO: Input the true 
+    
     threshold = 0.5
     y_pred = ["positive" if score >= threshold else "negative" for score in pred_scores]
     #print(y_pred)
 
     r = np.flip(sklearn.metrics.confusion_matrix(y_true, y_pred))
-
+    
+    
     precision = sklearn.metrics.precision_score(y_true=y_true, y_pred=y_pred, pos_label="positive")
     recall = sklearn.metrics.recall_score(y_true=y_true, y_pred=y_pred, pos_label="positive")
     thresholds = np.arange(start=0.2, stop=0.7, step=0.05)
@@ -75,8 +77,7 @@ if __name__ == '__main__':
     precisions, recalls = precision_recall_curve(y_true=y_true, pred_scores=pred_scores,
                                                 thresholds=thresholds)
 
-    f1 = f1_score(precisions, recalls)  #Calculate the best tradeoff point from the pairs of precisions and recalls.
-    
+    f1 = f1_score(precisions, recalls)  #Calclate the buest tradeoff point from the pairs of precisions and recalls.
     
     #Store the image of precision-recall curve
     plt.plot(recalls, precisions, linewidth=4, color="red", zorder=0)
