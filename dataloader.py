@@ -149,7 +149,7 @@ class TACO(torch.utils.data.Dataset):
 				bboxs[i][2] = image.shape[2]
 				print("width adjusted", sys.stderr)
 			if bboxs[i][3] > image.shape[1]:
-				bboxs[i][3] > image.shape[1]
+				bboxs[i][3] = image.shape[1]
 				print("height adjusted", sys.stderr)
 
 		x_fraction = self.resize_to / image.shape[2]
@@ -187,6 +187,14 @@ class Proposals(torch.utils.data.Dataset):
 		self.categories = torch.load("proposals/bounding_boxes_qual_categories_X.pt") # both proposal and gt
 		self.categories = [self.categories[index] for index in self.taco.img_ids]
 
+		# proper_bboxes = []
+		# propers_categories = []
+		# for image, category in zip(self.bboxs, self.categories):
+		# 	proper_bboxes.append(image[(image[:, 2] > 2) * (image[:, 3] > 2)])
+		# 	propers_categories.append(category[(image[:, 2] > 2) * (image[:, 3] > 2)])
+		# self.bboxs = proper_bboxes
+		# self.categories = propers_categories
+
 	def __len__(self):
 		return Proposals.PROPOSALS_PER_IMAGE*len(self.taco)
 
@@ -217,14 +225,19 @@ class Proposals(torch.utils.data.Dataset):
 
 
 	def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
-		proposal, category = self.sample_index(idx)
-
 		taco_index = idx // Proposals.PROPOSALS_PER_IMAGE
 
 		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
 		image = torchvision.io.read_image(image_path)
+
+		proposal, category = self.sample_index(idx)
 		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
 		patch = image[:, x:x2, y:y2]
+
+		while patch.shape[1] < 2 or patch.shape[2] < 2:
+			print("patch too small, resampling", file=sys.stderr)
+			proposal, category = self.sample_index(idx)
+			x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
 
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		category = torch.nn.functional.one_hot(category, num_classes=60)
@@ -248,8 +261,8 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 
 
 if __name__ == '__main__':
-	# tep = Proposals("D:\\data")
-	tep = Proposals()
+	tep = Proposals("D:\\data")
+	# tep = Proposals()
 	print(tep[0][0].shape)
 	print(tep[0][1].shape)
 	print("-------------------------------")
