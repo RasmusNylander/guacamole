@@ -90,7 +90,7 @@ class TACO(torch.utils.data.Dataset):
 		self.type = ds_type
 		self.data_augmentation = data_augmentation
 		self.resize_to = resize_to
-		self.tacoitems = {}
+		self.tacoitems = {} # [img_id: TACOItem(), ...]
 
 		if DatasetType.train == self.type:
 			self.img_ids = TACO.TRAINING_INDICES
@@ -216,10 +216,10 @@ class Proposals(torch.utils.data.Dataset):
 		bbox = self.bboxs[image_idx][proposal_idx]
 		category = self.categories[image_idx][proposal_idx]
 
-		image = self.taco[]
+		image = torchvision.io.read_image(self.taco[image_idx].path)
+		patch = image[:, bbox[0] : bbox[0] + bbox[2], bbox[1] : bbox[1] + bbox[3]]
 
-
-		return bbox, category
+		return patch, category
 
 
 
