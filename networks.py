@@ -7,6 +7,7 @@ from torchvision.models import resnet18, efficientnet_b3, resnet152, vgg19, alex
 class Architecture(Enum):
 	ALEXNET = "alexnet"
 	RESNET18 = "resnet18"
+	RESNET152 = "resnet152"
 
 	def __str__(self):
 		return self.value
@@ -16,6 +17,8 @@ class Architecture(Enum):
 			return Architecture.ALEXNET
 		elif s == Architecture.RESNET18.value:
 			return Architecture.RESNET18
+		elif s == Architecture.RESNET152.value:
+			return Architecture.RESNET152
 		else:
 			return None
 
@@ -25,6 +28,8 @@ class Architecture(Enum):
 			return TransferNetwork()
 		elif self == Architecture.RESNET18:
 			return ResNet18()
+		elif self == Architecture.RESNET152:
+			return ResNet152()
 		else:
 			raise NotImplementedError(f"Architecture {self} not implemented")
 
@@ -53,6 +58,24 @@ class ResNet18(nn.Module):
 		super(ResNet18, self).__init__()
 		self.architecture = Architecture.RESNET18
 		self.net = resnet18(pretrained=True)
+		for param in self.net.parameters():
+			param.requires_grad = False
+
+		modelOutputFeats = self.net.fc.in_features
+		self.net.fc = nn.Sequential(
+			nn.Linear(modelOutputFeats, 60),
+		)
+
+	def forward(self, x):
+		x = self.net(x)
+		return x
+
+
+class ResNet152(nn.Module):
+	def __init__(self):
+		super(ResNet152, self).__init__()
+		self.architecture = Architecture.RESNET152
+		self.net = resnet152(pretrained=True)
 		for param in self.net.parameters():
 			param.requires_grad = False
 
