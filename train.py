@@ -21,6 +21,7 @@ from assert_gpu import assert_gpu
 device = assert_gpu()
 from metrics import Metrics, get_metrics
 from dataclasses import dataclass
+from dataloader import TACO
 
 @dataclass
 class ClassificationEvalResult:
@@ -45,8 +46,10 @@ def evaluate_classification(
 
 			output = model(data)
 			loss[batch_number] = loss_function(output, target).cpu().item()
+			prediction = torch.argmax(output, dim=1)
+			prediction = torch.nn.functional.one_hot(prediction, num_classes=len(TACO.LABELS)).float()
 			for metric in metrics:
-				metric(output, target)
+				metric(prediction, target)
 
 	loss = loss.mean().item()
 	precision, recall, f1, accuracy = [metric.compute().item() for metric in metrics]
