@@ -15,14 +15,16 @@ def cross_entropy(prediction_logits: Tensor, target: Tensor) -> Tensor:
 	return torch.nn.functional.cross_entropy(prediction_logits, target)
 
 
-def get_metrics() -> list[torchmetrics.Metric]:
-	# precision, recall, f1, accuracy, iou
+Metrics = list[torchmetrics.Metric, torchmetrics.Metric, torchmetrics.Metric, torchmetrics.Metric]
+
+
+def get_metrics() -> Metrics:
+	# precision, recall, f1, accuracy
 	return [
-		torchmetrics.Precision(task="multiclass", num_classes=60, average="macro"),
-		torchmetrics.Recall(task="multiclass", num_classes=60, average="macro"),
-		torchmetrics.F1Score(task="multiclass", num_classes=60, average="macro"),
-		torchmetrics.Accuracy(task="multiclass", num_classes=60, average="macro"),
-		torchmetrics.JaccardIndex(task="multiclass", num_classes=60, average="macro")
+		torchmetrics.Precision(task="multiclass", num_classes=60),
+		torchmetrics.Recall(task="multiclass", num_classes=60),
+		torchmetrics.Accuracy(task="multiclass", num_classes=60),
+		torchmetrics.F1Score(task="multiclass", num_classes=60),
 	]
 
 
