@@ -12,7 +12,7 @@ do
 	#BSUB -o outs/$n_%J.out
 	#BSUB -n 1
 	#BSUB -R "rusage[mem=20GB]"
-	#BSUB -W 05:00
+	#BSUB -W 04:00
 	#BSUB -gpu "num=1:mode=exclusive_process"
 
 	module load python3/3.11.3
@@ -21,7 +21,7 @@ do
 	"
 	
 
-	command="python train.py --name=$n --model=$MODEL --logging=True --epochs=50"
+	command="python train.py --name=$n --model=$MODEL --logging=True --epochs=30"
 	echo "$config$command" | bsub
 	
 done
