@@ -53,7 +53,7 @@ def mAP_cal(ap_values):
     return mAP
 
 
-def Precision_recall_curve_plot(precisions,recalls, AP, path, num):
+def Precision_recall_curve_plot(precisions,recalls, AP, path, num, f1):
     plt.plot(recalls, precisions, linewidth=4, color="red", zorder=0)
     plt.scatter(recalls[the_maximum_index(f1)], 
                 precisions[the_maximum_index(f1)], 
@@ -89,7 +89,7 @@ def calc_AP(group_pred_scores, group_y_true):
         APs.append(AP)  # The list will contain various APs
         
         #Store the image of precision-recall curve
-        Precision_recall_curve_plot(precisions,recalls, AP, path, num)
+        Precision_recall_curve_plot(precisions,recalls, AP, path, num, f1)
          
     '''
     #IoU related testing
