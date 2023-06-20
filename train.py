@@ -121,7 +121,7 @@ def run(
 		print("initializing wandb...")
 		wandb.init(
 			# set the wandb project where this run will be logged
-			project="decomposing-avocado",
+			project="guacamole",
 			name=name,
 			# track hyperparameters and run metadata
 			config={
@@ -129,7 +129,6 @@ def run(
 				"epochs": num_epochs,
 				"batch_size": batch_size,
 				"lr": lr,
-				"data_augm": "none",
 			}
 		)
 
