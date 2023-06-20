@@ -3,6 +3,9 @@ import torch
 from dataloader import Patches, DatasetType, ProposalsEval
 from torch.utils.data import DataLoader
 import os
+from networks import Architecture
+from assert_gpu import assert_gpu
+device = assert_gpu()
 
 
 def evaluate(model):
@@ -15,11 +18,15 @@ def evaluate(model):
     
         batch_size = 64
         patch_set = Patches(image, proposals)
-        patch_loader = DataLoader(Patches, batch_size=batch_size, shuffle=False, num_workers=1)
+        patch_loader = DataLoader(patch_set, batch_size=batch_size, shuffle=False, num_workers=1)
     
         predictions = []
         for patch in patch_loader:
-            predictions.append(model(patch))
+
+            input_tensor = torch.rand(1000, 4)
+
+            scores = torch.rand(1000, 60)
+            #predictions.append(model(patch))
         predictions = torch.tensor(predictions)
 
         #category, confidence = extract_category(predictions)
@@ -34,6 +41,15 @@ def evaluate(model):
 
 
 if __name__ == '__main__':
+
+    """
+    modelpath = os.path.join("models","restfull_netowrk.pdf")
+    architecture = Architecture.from_string("resnet18")
+    
+    model = architecture.create_network()
+    model.load_state_dict(torch.load(modelpath))
+	model.to(device)
+    """
 
     model = None
     evaluate(model)

@@ -6,6 +6,7 @@ bounding_boxes_quality.pt
 bounding_boxes_qual_categories.pt
 bounding_boxes_quality_X.pt
 bounding_boxes_qual_categories_X.pt
+models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

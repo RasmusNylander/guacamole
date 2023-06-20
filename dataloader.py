@@ -280,8 +280,8 @@ class Patches(torch.utils.data.Dataset):
 	BACKGROUND_INDEX = 60
 
 	def __init__(self, image: Tensor, proposals: Tensor):
-		self.proposals = proposals
-		self.image = image
+		self.proposals = torch.squeeze(proposals)
+		self.image =  torch.squeeze(image)
 
 	def __len__(self):
 		return len(self.proposals)
@@ -306,7 +306,7 @@ class Patches(torch.utils.data.Dataset):
 			y2 +=1
 			y  -=2
 
-		patch = image[:, x:x2, y:y2]
+		patch = self.image[:, x:x2, y:y2]
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		return patch
 
@@ -326,8 +326,8 @@ class ProposalsEval(Proposals):
 		proposals = self.bboxs[idx]
 
 		true_bboxs = clamp_bboxs(true_bboxs,torch.tensor([600,600]))
-		true_bboxs[:,:,2] = true_bboxs[:,:,2] - true_bboxs[:,:,0]
-		true_bboxs[:,:,3] = true_bboxs[:,:,3] - true_bboxs[:,:,1]
+		true_bboxs[:,2] = true_bboxs[:,2] - true_bboxs[:,0]
+		true_bboxs[:,3] = true_bboxs[:,3] - true_bboxs[:,1]
 
 		return proposals, image, true_bboxs, true_cats
 
