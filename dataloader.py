@@ -234,11 +234,6 @@ class Proposals(torch.utils.data.Dataset):
 		proposal = proposals[proposal_index]
 		category = proposal_categories[proposal_index]
 
-		if taco_index == 374 and index % 4 != 0:
-			# The little fucker starts at y=-1
-			# TODO: catch all the little duckers
-			return torch.tensor([0, 0, 600, 600]), torch.tensor(59)
-
 		proposal = proposal.int()
 		return proposal, category
 
