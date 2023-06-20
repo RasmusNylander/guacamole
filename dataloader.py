@@ -244,7 +244,7 @@ class Proposals(torch.utils.data.Dataset):
 		taco_index = idx // Proposals.PROPOSALS_PER_IMAGE
 
 		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
-		image = torchvision.io.read_image(image_path)
+		image = read_image_and_rotate(image_path)
 		image = torchvision.transforms.functional.resize(image, size=(image_width, image_width))
 
 		proposal, category = self.sample_index(idx)
@@ -349,7 +349,7 @@ def read_image_and_rotate(image_path):
 			break
 		
 	I = Image.open(image_path)
-    
+
     # Load and process image metadata
 	if I._getexif():
 		exif = dict(I._getexif().items())
