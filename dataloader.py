@@ -100,7 +100,7 @@ class TACO(torch.utils.data.Dataset):
 			self.img_ids = TACO.ALL_INDICES
 
 		anns_file_path = os.path.join(root_dir, 'annotations.json')
-		with x as f:
+		with open(anns_file_path, 'r') as f:
 			dataset = json.loads(f.read())
 
 		imgs = dataset['images']
@@ -243,34 +243,26 @@ class Proposals(torch.utils.data.Dataset):
 		return proposal, category
 
 	def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
-		image_width = 600
-		proposal_min_width = 6
-
 		taco_index = idx // Proposals.PROPOSALS_PER_IMAGE
 
 		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
 		image = torchvision.io.read_image(image_path)
-		image = torchvision.transforms.functional.resize(image, size=(image_width, image_width))
 
+		proposal_min_width = 6
+		image_width = 600
 		proposal, category = self.sample_index(idx)
 
-		coordinates = clamp_bboxs(proposal.unsqueeze(dim=0), torch.tensor([image_width, image_width]))
+		coordinates = clamp_bboxs(proposal.unsqueeze(dim=0), torch.tensor([600, 600]))
 		x, y, x2, y2 = coordinates[0, 0], coordinates[0, 1], coordinates[0, 2], coordinates[0, 3]
 
-		patch = image[:, x:x2, y:y2]
-		try:
-			patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
-		except Exception as e:
-			print("AAAAAAAAAAAAAAAAhhhhhhhhhhhh!!!!!!!!!", file=sys.stderr)
-			print(f"x: {x}, y: {y}, x2: {x2}, y2: {y2}", file=sys.stderr)
-			print(f"Image id: {self.taco.img_ids[taco_index]}", file=sys.stderr)
-			print(f"Image path: {image_path}", file=sys.stderr)
+		while x2 - x < 6 or y2 - y < 6:
+			print("patch too small, resampling", file=sys.stderr)
 			print(proposal.numpy())
-			print("--------------------------------------------------------------------------")
-			print(e)
-			print("--------------------------------------------------------------------------")
-			print(f"Patch size: {patch.shape}", file=sys.stderr)
-			exit(69420)
+			proposal, category = self.sample_index(idx)
+			x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+
+		patch = image[:, x:x2, y:y2]
+		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		category = torch.nn.functional.one_hot(category, num_classes=60)
 
 		return patch, category
@@ -348,9 +340,6 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 
 
 if __name__ == '__main__':
-	proposal = torch.tensor([[530, 180, 541, 201]])
-	coordinates = clamp_bboxs(proposal, torch.tensor([600, 600]))
-
 	tep = Proposals("D:\\data")
 	# tep = Proposals()
 	print(tep[0][0].shape)
