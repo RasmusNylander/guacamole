@@ -179,8 +179,8 @@ class Proposals(torch.utils.data.Dataset):
 	BACKGROUND_INDEX = 60
 	PROPOSALS_PER_IMAGE = 4
 
-	def __init__(self, root_dir: PathLike = "/dtu/datasets1/02514/data_wastedetection"):
-		self.taco = TACO(root_dir, ds_type=DatasetType.train)
+	def __init__(self, root_dir: PathLike = "/dtu/datasets1/02514/data_wastedetection",ds_type: DatasetType = DatasetType.train,):
+		self.taco = TACO(root_dir, ds_type=ds_type)
 		self.bboxs = torch.load("proposals/bounding_boxes_quality_X.pt") # both proposal and gt
 		self.bboxs = [self.bboxs[index] for index in self.taco.img_ids]
 		# self.cumsum_proposal_ids = np.cumsum([len(x) for x in self.bboxs])
