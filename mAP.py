@@ -90,7 +90,8 @@ def calc_AP(group_pred_scores, group_y_true):
         APs.append(AP)  # The list will contain various APs
         
         #Store the image of precision-recall curve
-        Precision_recall_curve_plot(precisions,recalls, AP, path, num, f1)
+        if AP>0:
+            Precision_recall_curve_plot(precisions,recalls, AP, path, num, f1)
          
     '''
     #IoU related testing

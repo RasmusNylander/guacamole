@@ -72,10 +72,11 @@ def evaluate(model):
     
         predictions = []
         for patch in patch_loader:
-            patch.to(device).float()
+            patch = patch.to(device).float()
             predictions.append(model(patch))
 
-        predictions = torch.cat(predictions)
+        predictions = torch.cat(predictions).to('cpu')
+        predictions = torch.nn.functional.softmax(predictions)
 
         confidscore, catargmax = torch.max(predictions, dim=1)
 
@@ -100,19 +101,28 @@ def evaluate(model):
             cat_proposals  = cat_proposals[proposal_inds]
             cat_confidence = cat_confidence[proposal_inds]
             
-            if len(cat_confidence)>0:
+            
 
-                # check which bb are true detections
-                iou_threshold = 0.5
-                true = true_bb[true_cat==cat+1]
-                if len(true)==0:
-                    cat_true = torch.tensor([0]*len(cat_proposals))
-                else:
+            # check which bb are true detections
+            iou_threshold = 0.5
+            true = true_bb[true_cat==cat+1]
+            if len(true)==0:
+                cat_true = torch.tensor([0]*len(cat_proposals))
+            else:
+                if len(cat_confidence)>0:
                     iou_bb = torchvision.ops.box_iou(cat_proposals, true_bb[true_cat==cat+1])
                     cat_true = iou_bb.max(1)[0]>iou_threshold
-                # 
-                cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence])
-                cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
+                    missed = max(len(true) - sum(cat_true),0)
+                else:
+                    missed = len(true)
+                
+                cat_scores[cat] = torch.cat([cat_scores[cat],torch.tensor([0]*missed)])
+                cat_trues[cat] = torch.cat([cat_trues[cat],torch.tensor([1]*missed)])
+
+            cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence])
+            cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
+
+            
 
     calc_AP(cat_scores, cat_trues)
 
