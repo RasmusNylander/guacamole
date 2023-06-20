@@ -92,7 +92,7 @@ def train(
 			train_loss_epoch[batch_number] = loss.item()
 
 		validation_result = evaluate_classification(model, validation_loader, loss_function, metrics)
-		if validation_result.loss < best_loss and epoch > 10:
+		if validation_result.loss < best_loss:
 			best_loss = validation_result.loss
 			state_dict_extractor = model.__class__()  # We do it this way because it's the easiest way to get the state dict to the cpu
 			state_dict_extractor.load_state_dict(model.state_dict())
