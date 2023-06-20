@@ -134,7 +134,7 @@ class TACO(torch.utils.data.Dataset):
 		#categories = dataset['categories']
 		
 	def __len__(self) -> int:
-		return len(self.tacoitems)
+		return len(self.img_ids)
 
 	def resize(self, image: Tensor, bboxs: Tensor) -> tuple:
 		"""
