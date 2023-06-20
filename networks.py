@@ -4,6 +4,8 @@ from typing import Optional
 from torch import nn
 from torchvision.models import resnet18, efficientnet_b3, resnet152, vgg19, alexnet
 
+from dataloader import TACO
+
 class Architecture(Enum):
 	ALEXNET = "alexnet"
 	RESNET18 = "resnet18"
@@ -44,7 +46,7 @@ class TransferNetwork(nn.Module):
 
 		mod = list(self.net.classifier.children())
 		mod.pop()
-		mod.append(nn.Linear(4096, len(dataloader.TACO.LABELS)))
+		mod.append(nn.Linear(4096, len(TACO.LABELS)))
 		new_classifier = nn.Sequential(*mod)
 		self.net.classifier = new_classifier
 
@@ -63,7 +65,7 @@ class ResNet18(nn.Module):
 
 		modelOutputFeats = self.net.fc.in_features
 		self.net.fc = nn.Sequential(
-			nn.Linear(modelOutputFeats, len(dataloader.TACO.LABELS)),
+			nn.Linear(modelOutputFeats, len(TACO.LABELS)),
 		)
 
 	def forward(self, x):
@@ -81,7 +83,7 @@ class ResNet152(nn.Module):
 
 		modelOutputFeats = self.net.fc.in_features
 		self.net.fc = nn.Sequential(
-			nn.Linear(modelOutputFeats, len(dataloader.TACO.LABELS)),
+			nn.Linear(modelOutputFeats, len(TACO.LABELS)),
 		)
 
 	def forward(self, x):
