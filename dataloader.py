@@ -306,6 +306,8 @@ class ProposalsEval(Proposals):
 	def __init__(self, root_dir: PathLike = "/dtu/datasets1/02514/data_wastedetection",ds_type: DatasetType = DatasetType.train):
 		super(ProposalsEval, self).__init__(root_dir= root_dir,ds_type = ds_type)
 
+		self.bboxs = torch.load("proposals/bounding_boxes_quality.pt") 
+
 	def __len__(self):
 		return len(self.taco.img_ids) 
 
