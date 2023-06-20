@@ -124,7 +124,8 @@ def evaluate(model):
 
             
 
-    calc_AP(cat_scores, cat_trues)
+    APs = calc_AP(cat_scores, cat_trues)
+    torch.save(APs,'APs1')
 
 
 if __name__ == '__main__':
