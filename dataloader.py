@@ -132,7 +132,7 @@ class TACO(torch.utils.data.Dataset):
 		#categories = dataset['categories']
 		
 	def __len__(self) -> int:
-		return len(self.tacoitems)
+		return len(self.img_ids)
 
 	def resize(self, image: Tensor, bboxs: Tensor) -> tuple:
 		"""
@@ -299,6 +299,21 @@ class Patches(torch.utils.data.Dataset):
 		patch = image[:, x:x2, y:y2]
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		return patch
+
+
+class ProposalsEval(Proposals):
+
+	def __init__(self, root_dir: PathLike = "/dtu/datasets1/02514/data_wastedetection",ds_type: DatasetType = DatasetType.train):
+		super(ProposalsEval, self).__init__(root_dir= root_dir,ds_type = ds_type)
+
+	def __len__(self):
+		return len(self.taco.img_ids) 
+
+	def __getitem__(self, idx: int):
+		image, true_bboxs, true_cats = self.taco[idx]
+		proposals = self.bboxs[idx]
+
+		return proposals, image, self.trucate(true_bboxs), true_cats
 
 
 def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
