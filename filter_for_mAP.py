@@ -21,4 +21,4 @@ def NMS_cal(input_tensor, scores):
     return NMS_group    
 NMS_g = NMS_cal(input_tensor, scores)
 
-for i in range()
+    
