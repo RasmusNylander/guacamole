@@ -30,7 +30,7 @@ class ClassificationEvalResult:
 def evaluate_classification(
 		model: torch.nn.Module,
 		test_loader: torch.utils.data.DataLoader,
-		loss_function
+		loss_function,
 ) -> ClassificationEvalResult:
 	model.eval()
 	with torch.no_grad():
@@ -45,6 +45,12 @@ def evaluate_classification(
 	loss = loss.mean().item()
 
 	return ClassificationEvalResult(loss)
+
+def save_model(state_dict: dict, name: str):
+	if not os.path.exists('models'):
+		os.makedirs('models')
+	savepath = f"models/{name}"
+	torch.save(model.state_dict(), savepath)
 
 
 def train(
@@ -83,6 +89,8 @@ def train(
 			state_dict_extractor = model.__class__()  # We do it this way because it's the easiest way to get the state dict to the cpu
 			state_dict_extractor.load_state_dict(model.state_dict())
 			best_model_state_dict = state_dict_extractor.state_dict()
+			tqdm.write(f"Saving new best model")
+			save_model(best_model_state_dict, name)
 
 		if with_logging:
 			wandb.log({
@@ -140,11 +148,8 @@ def run(
 	best_model_state = train(model, optimizer, train_loader, val_loader, loss_function, num_epochs=num_epochs)
 	model.load_state_dict(best_model_state)
 
-	if not os.path.exists('models'):
-		os.makedirs('models')
-	savepath = f"models/{name}"
 	print(f"saving model to {savepath}")
-	torch.save(model.state_dict(), savepath)
+	save_model(best_model_state, name)
 
 	test_result = evaluate(model, test_loader, loss_function)
 	wandb.log({
