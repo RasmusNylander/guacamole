@@ -19,18 +19,22 @@ import argparse
 import sys
 from assert_gpu import assert_gpu
 device = assert_gpu()
+from metrics import Metrics, get_metrics
+from dataclasses import dataclass
 
-
+@dataclass
 class ClassificationEvalResult:
-
-	def __init__(self, loss: float):
-		self.loss = loss
-
+	loss: float
+	precision: float
+	recall: float
+	f1: float
+	accuracy: float
 
 def evaluate_classification(
 		model: torch.nn.Module,
 		test_loader: torch.utils.data.DataLoader,
 		loss_function,
+		metrics: Metrics,
 ) -> ClassificationEvalResult:
 	model.eval()
 	with torch.no_grad():
@@ -41,16 +45,19 @@ def evaluate_classification(
 
 			output = model(data)
 			loss[batch_number] = loss_function(output, target).cpu().item()
+			for metric in metrics:
+				metric(output, target)
 
 	loss = loss.mean().item()
+	precision, recall, f1, accuracy = [metric.compute().item() for metric in metrics]
 
-	return ClassificationEvalResult(loss)
+	return ClassificationEvalResult(loss, precision, recall, f1, accuracy)
 
 def save_model(state_dict: dict, name: str):
 	if not os.path.exists('models'):
 		os.makedirs('models')
 	savepath = f"models/{name}"
-	torch.save(model.state_dict(), savepath)
+	torch.save(state_dict, savepath)
 
 
 def train(
@@ -59,6 +66,7 @@ def train(
 		train_loader: torch.utils.data.DataLoader,
 		validation_loader: torch.utils.data.DataLoader,
 		loss_function,
+		metrics: Metrics,
 		num_epochs: int = 10,
 ) -> dict:
 	best_model_state_dict, best_loss = None, float("inf")
@@ -83,7 +91,7 @@ def train(
 
 			train_loss_epoch[batch_number] = loss.item()
 
-		validation_result = evaluate_classification(model, validation_loader, loss_function)
+		validation_result = evaluate_classification(model, validation_loader, loss_function, metrics)
 		if validation_result.loss < best_loss and epoch > 10:
 			best_loss = validation_result.loss
 			state_dict_extractor = model.__class__()  # We do it this way because it's the easiest way to get the state dict to the cpu
@@ -96,6 +104,10 @@ def train(
 			wandb.log({
 						"train loss": train_loss_epoch.mean().item(),
 						"validation loss": validation_result.loss,
+						"validation precision": validation_result.precision,
+						"validation recall": validation_result.recall,
+						"validation f1": validation_result.f1,
+						"validation accuracy": validation_result.accuracy,
 					  })
 
 		tqdm.write(
@@ -119,6 +131,9 @@ def run(
 		batch_size=batch_size,
 		dataset_path_override=datapath_override,
 	)
+
+	metrics = get_metrics()
+	metrics = [metric.to(device) for metric in metrics]
 
 	print('initializing network...\n')
 	model = architecture.create_network()
@@ -145,7 +160,7 @@ def run(
 
 	print('training... \n')
 
-	best_model_state = train(model, optimizer, train_loader, val_loader, loss_function, num_epochs=num_epochs)
+	best_model_state = train(model, optimizer, train_loader, val_loader, loss_function, num_epochs=num_epochs, metrics=metrics)
 	model.load_state_dict(best_model_state)
 
 	print(f"saving model to {savepath}")
