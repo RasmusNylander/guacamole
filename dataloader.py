@@ -221,7 +221,14 @@ class Proposals(torch.utils.data.Dataset):
 		proposal_index = torch.randint(0, proposals.shape[0], (1,)).item()
 		proposal = proposals[proposal_index]
 		category = proposal_categories[proposal_index]
-		return proposal.int(), category
+
+		if taco_index == 374 and index % 4 != 0:
+			# The little fucker starts at y=-1
+			# TODO: catch all the little duckers
+			return torch.tensor([0, 0, 600, 600]), torch.tensor(59)
+
+		proposal = proposal.int()
+		return proposal, category
 
 
 	def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
@@ -233,13 +240,13 @@ class Proposals(torch.utils.data.Dataset):
 		proposal, category = self.sample_index(idx)
 		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
 
-		while x2 - x < 2 or y2 - y < 2:
+		while x2 - x < 6 or y2 - y < 6:
 			print("patch too small, resampling", file=sys.stderr)
+			print(proposal.numpy())
 			proposal, category = self.sample_index(idx)
 			x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
 
 		patch = image[:, x:x2, y:y2]
-
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		category = torch.nn.functional.one_hot(category, num_classes=60)
 
