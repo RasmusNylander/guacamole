@@ -100,7 +100,7 @@ class TACO(torch.utils.data.Dataset):
 			self.img_ids = TACO.ALL_INDICES
 
 		anns_file_path = os.path.join(root_dir, 'annotations.json')
-		with open(anns_file_path, 'r') as f:
+		with x as f:
 			dataset = json.loads(f.read())
 
 		imgs = dataset['images']
@@ -280,7 +280,9 @@ class Patches(torch.utils.data.Dataset):
 
 	def __getitem__(self, idx: int) -> tuple[Tensor]:
 		proposal = self.proposals[idx]
-		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+
+		coordinates = clamp_bboxs(proposal.unsqueeze(dim=0), torch.tensor([600, 600]))
+		x, y, x2, y2 = coordinates[0, 0], coordinates[0, 1], coordinates[0, 2], coordinates[0, 3]
 
 		while x2 - x < 6:
 			print("patch too small, resampling", file=sys.stderr)
@@ -315,7 +317,11 @@ class ProposalsEval(Proposals):
 		image, true_bboxs, true_cats = self.taco[idx]
 		proposals = self.bboxs[idx]
 
-		return proposals, image, self.trucate(true_bboxs), true_cats
+		true_bboxs = clamp_bboxs(true_bboxs,torch.tensor([600,600]))
+		true_bboxs[:,:,2] = true_bboxs[:,:,2] - true_bboxs[:,:,0]
+		true_bboxs[:,:,3] = true_bboxs[:,:,3] - true_bboxs[:,:,1]
+
+		return proposals, image, true_bboxs, true_cats
 
 
 def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:

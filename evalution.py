@@ -2,14 +2,16 @@ import tqdm
 import torch
 from dataloader import Patches, DatasetType, ProposalsEval
 from torch.utils.data import DataLoader
+import os
 
 
 def evaluate(model):
 
-    Proposals = ProposalsEval(ds_type = DatasetType.train)
-    img_loader = DataLoader(ProposalsEval, batch_size=1, shuffle=False, num_workers=1)
+    proposal_set = ProposalsEval(root_dir= "data_wastedetection",ds_type = DatasetType.train)
+    img_loader = DataLoader(proposal_set, batch_size=1, shuffle=False, num_workers=1)
 
-    for img_num, (proposals, image, true_bb, true_cat) in enumerate(tqdm(img_loader, leave=False, unit="batches", position=1)):
+    #for img_num, (proposals, image, true_bb, true_cat) in enumerate(tqdm(img_loader, leave=False, unit="batches", position=1)):
+    for (proposals, image, true_bb, true_cat) in img_loader:
     
         batch_size = 64
         patch_set = Patches(image, proposals)
@@ -23,7 +25,7 @@ def evaluate(model):
         #category, confidence = extract_category(predictions)
 
         # remove backgrounds
-        category = category[category~=60]
+        category = category[category!=60]
         #category = confidence[category~=60]
 
         for cat in torch.unique(category):
