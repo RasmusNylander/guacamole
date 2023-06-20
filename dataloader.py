@@ -257,12 +257,6 @@ class Proposals(torch.utils.data.Dataset):
 		coordinates = clamp_bboxs(proposal.unsqueeze(dim=0), torch.tensor([image_width, image_width]))
 		x, y, x2, y2 = coordinates[0, 0], coordinates[0, 1], coordinates[0, 2], coordinates[0, 3]
 
-		while x2 - x < 6 or y2 - y < 6:
-			print("patch too small, resampling", file=sys.stderr)
-			print(proposal.numpy())
-			proposal, category = self.sample_index(idx)
-			x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
-
 		patch = image[:, x:x2, y:y2]
 		try:
 			patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
