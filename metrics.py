@@ -3,6 +3,7 @@ import torchvision
 from torch import Tensor
 import torchmetrics
 
+
 @torch.jit.script
 def IoU(rect1: Tensor, rect2: Tensor) -> Tensor:
 	rect1[:, 2:] = rect1[:, :2] + rect1[:, 2:]

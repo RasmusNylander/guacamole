@@ -44,7 +44,7 @@ class TransferNetwork(nn.Module):
 
 		mod = list(self.net.classifier.children())
 		mod.pop()
-		mod.append(nn.Linear(4096, 60))
+		mod.append(nn.Linear(4096, len(dataloader.TACO.LABELS)))
 		new_classifier = nn.Sequential(*mod)
 		self.net.classifier = new_classifier
 
@@ -63,7 +63,7 @@ class ResNet18(nn.Module):
 
 		modelOutputFeats = self.net.fc.in_features
 		self.net.fc = nn.Sequential(
-			nn.Linear(modelOutputFeats, 60),
+			nn.Linear(modelOutputFeats, len(dataloader.TACO.LABELS)),
 		)
 
 	def forward(self, x):
@@ -81,7 +81,7 @@ class ResNet152(nn.Module):
 
 		modelOutputFeats = self.net.fc.in_features
 		self.net.fc = nn.Sequential(
-			nn.Linear(modelOutputFeats, 60),
+			nn.Linear(modelOutputFeats, len(dataloader.TACO.LABELS)),
 		)
 
 	def forward(self, x):
