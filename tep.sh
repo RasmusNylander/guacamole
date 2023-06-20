@@ -11,7 +11,7 @@ do
 	#BSUB -J $n
 	#BSUB -o outs/$n_%J.out
 	#BSUB -n 1
-	#BSUB -R "rusage[mem=20GB]"
+	#BSUB -R "rusage[mem=10GB]"
 	#BSUB -W 04:00
 	#BSUB -gpu "num=1:mode=exclusive_process"
 
