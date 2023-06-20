@@ -249,6 +249,7 @@ class Proposals(torch.utils.data.Dataset):
 
 		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
 		image = torchvision.io.read_image(image_path)
+		image = torchvision.transforms.functional.resize(image, size=(image_width, image_width))
 
 		proposal, category = self.sample_index(idx)
 
