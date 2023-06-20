@@ -93,9 +93,6 @@ def train(
 		tqdm.write(
 			f" Train loss: {round(train_loss_epoch.mean().item(), 3)}, Validation loss {round(validation_result.loss, 3)}")
 
-		tqdm.write(
-			f" Train loss: {round(train_loss_epoch.mean().item(), 3)}")
-
 	return best_model_state_dict if best_model_state_dict is not None else model.state_dict()
 
 
@@ -144,16 +141,17 @@ def run(
 	best_model_state = train(model, optimizer, train_loader, val_loader, loss_function, num_epochs=num_epochs)
 	model.load_state_dict(best_model_state)
 
-	test_result = evaluate(model, test_loader, loss_function)
-	wandb.log({
-				  "test loss": test_result.loss,
-			  })
-
 	if not os.path.exists('models'):
 		os.makedirs('models')
 	savepath = f"models/{name}"
 	print(f"saving model to {savepath}")
 	torch.save(model.state_dict(), savepath)
+
+	test_result = evaluate(model, test_loader, loss_function)
+	wandb.log({
+				  "test loss": test_result.loss,
+			  })
+
 
 
 if __name__ == "__main__":
