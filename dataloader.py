@@ -255,11 +255,11 @@ class Proposals(torch.utils.data.Dataset):
 
 def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
 	if dataset_path_override is not None:
-		train_dataset = Proposals(dataset_path_override)
-		validation_dataset, test_dataset = TACO(dataset_path_override, DatasetType.valid), TACO(dataset_path_override, DatasetType.test)
+		train_dataset = Proposals(dataset_path_override,  DatasetType.train)
+		validation_dataset, test_dataset = Proposals(dataset_path_override, DatasetType.valid), TACO(dataset_path_override, DatasetType.test)
 	else:
 		train_dataset = Proposals()
-		validation_dataset, test_dataset = TACO(ds_type=DatasetType.valid), TACO(ds_type=DatasetType.test)
+		validation_dataset, test_dataset = Proposals(ds_type=DatasetType.valid), TACO(ds_type=DatasetType.test)
 
 	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
 	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
