@@ -31,7 +31,7 @@ def evaluate_classification(
 		model: torch.nn.Module,
 		test_loader: torch.utils.data.DataLoader,
 		loss_function
-) -> EvalResult:
+) -> ClassificationEvalResult:
 	model.eval()
 	with torch.no_grad():
 		loss = torch.empty(len(test_loader))
