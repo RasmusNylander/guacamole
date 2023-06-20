@@ -253,6 +253,39 @@ class Proposals(torch.utils.data.Dataset):
 		return patch, category
 
 
+class Patches(torch.utils.data.Dataset):
+	BACKGROUND_INDEX = 60
+
+	def __init__(self, image: Tensor, proposals: Tensor):
+		self.proposals = proposals
+		self.image = image
+
+	def __len__(self):
+		return len(self.proposals)
+
+	def __getitem__(self, idx: int) -> tuple[Tensor]:
+		proposal = self.proposals[idx]
+		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+
+		while x2 - x < 6 or y2 - y < 6:
+			print("patch too small, resampling", file=sys.stderr)
+			print(proposal.numpy())
+			proposal = self.idx_to_image_and_proposal_id(idx)
+			x2 +=1
+			x  -=1
+
+		while y2 - y < 6:
+			print("patch too small, resampling", file=sys.stderr)
+			print(proposal.numpy())
+			proposal = self.idx_to_image_and_proposal_id(idx)
+			y2 +=1
+			y  -=1
+
+		patch = image[:, x:x2, y:y2]
+		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
+		return patch
+
+
 def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
 	if dataset_path_override is not None:
 		train_dataset = Proposals(dataset_path_override,  DatasetType.train)
