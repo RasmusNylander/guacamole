@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, Dataset
 import torchvision.transforms as transforms
 import numpy as np
 import json
+from PIL import Image, ExifTags
 
 import sys
 
@@ -161,7 +162,7 @@ class TACO(torch.utils.data.Dataset):
 
 	def __getitem__(self, id:int) -> tuple:
 		tacoitem = self.tacoitems[self.img_ids[id]]
-		image = torchvision.io.read_image(tacoitem.path)
+		image = read_image_and_rotate(tacoitem.path)
 		reized_image, resized_bboxs = self.resize(image, tacoitem.bboxs) 
 		return reized_image, resized_bboxs, tacoitem.categories,
 
@@ -341,6 +342,27 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 
 	return train_loader, validation_loader, test_loader
 
+
+def read_image_and_rotate(image_path):
+	for orientation in ExifTags.TAGS.keys():
+		if ExifTags.TAGS[orientation] == 'Orientation':
+			break
+		
+	I = Image.open(image_path)
+    
+    # Load and process image metadata
+	if I._getexif():
+		exif = dict(I._getexif().items())
+		# Rotate portrait and upside down images if necessary
+		if orientation in exif:
+			if exif[orientation] == 3:
+				I = I.rotate(180,expand=True)
+			if exif[orientation] == 6:
+				I = I.rotate(270,expand=True)
+			if exif[orientation] == 8:
+				I = I.rotate(90,expand=True)
+
+	return torchvision.transforms.functional.to_tensor(I)
 
 if __name__ == '__main__':
 	tep = Proposals("D:\\data")
