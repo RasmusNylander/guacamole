@@ -66,18 +66,15 @@ def Precision_recall_curve_plot(precisions,recalls, AP, path, num):
     os.makedirs(path, exist_ok=True)
     plt.savefig(f"{path}/test_{num}.png")
     
-
-
-if __name__ == '__main__':
-    
+def calc_mAP(group_pred_scores, group_y_true):
     path = './precision-recall_curve'
     APs = []
     
     for i in range(59):
         num = 1 + i  #TODO: Input the number for the precision-recall number if you want to generate the graphs
         
-        pred_scores = [0.7, 0.3, 0.5, 0.6, 0.55, 0.9, 0.4, 0.2, 0.4, 0.3]  #TODO: The prediction input
-        y_true = [1, 0, 0, 1, 1, 1, 0, 1, 0, 1] #TODO: Input the true
+        pred_scores = group_pred_scores[i].tolist() #TODO: The prediction input
+        y_true = group_y_true[i].tolist() #TODO: Input the true
 
         
         thresholds = np.arange(start=0.2, stop=1.0, step=0.05)
@@ -103,5 +100,5 @@ if __name__ == '__main__':
     '''
     # mAP: Mean Average Precision (for multiple categories)
     mAP = mAP_cal(APs)
-    print('Mean Average Precision: ' + str(mAP))
+    return mAP
     
