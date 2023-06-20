@@ -188,6 +188,13 @@ def clamp_bboxs(bboxses: Tensor, image_size: Tensor) -> Tensor:
 	return torch.stack([x, y, x2, y2], dim=1)
 
 
+@torch.jit.script
+def bounding_box_to_coordinates(bboxses: Tensor) -> Tensor:
+	x, y, w, h = bboxses[:, 0], bboxses[:, 1], bboxses[:, 2], bboxses[:, 3]
+	x2, y2 = x + w, y + h
+	return torch.stack([x, y, x2, y2], dim=1)
+
+
 class Proposals(torch.utils.data.Dataset):
 	BACKGROUND_INDEX = 60
 	PROPOSALS_PER_IMAGE = 4
@@ -291,7 +298,7 @@ class ProposalsEval(Proposals):
 	def __len__(self):
 		return len(self.taco.img_ids) 
 
-	def __getitem__(self, idx: int):
+	def __getitem__(self, idx: int) -> tuple[Tensor, Tensor, Tensor, Tensor]:
 		image, true_bboxs, true_cats = self.taco[idx]
 		proposals = self.bboxs[idx]
 
@@ -337,8 +344,5 @@ def read_image_and_rotate(image_path):
 				I = I.rotate(90,expand=True)
 
 	return torchvision.transforms.functional.to_tensor(I)
-
-
-	
 
 
