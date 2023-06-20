@@ -115,6 +115,7 @@ def evaluate(model):
                     missed = max(len(true) - sum(cat_true),0)
                 else:
                     missed = len(true)
+                    cat_true = torch.tensor([],dtype=int)
                 
                 cat_scores[cat] = torch.cat([cat_scores[cat],torch.tensor([0]*missed)])
                 cat_trues[cat] = torch.cat([cat_trues[cat],torch.tensor([1]*missed)])
