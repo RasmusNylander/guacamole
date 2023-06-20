@@ -265,7 +265,7 @@ class Proposals(torch.utils.data.Dataset):
 		patch = image[:, y:y2, x:x2]
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 
-		category = torch.nn.functional.one_hot(category, num_classes=60)
+		category = torch.nn.functional.one_hot(category, num_classes=len(TACO.LABELS))
 
 		return patch, category
 
