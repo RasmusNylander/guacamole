@@ -188,8 +188,6 @@ def clamp_bboxs(bboxses: Tensor, image_size: Tensor) -> Tensor:
 	return torch.stack([x, y, x2, y2], dim=1)
 
 
-def
-
 class Proposals(torch.utils.data.Dataset):
 	BACKGROUND_INDEX = 60
 	PROPOSALS_PER_IMAGE = 4
