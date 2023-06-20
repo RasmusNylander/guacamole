@@ -6,9 +6,8 @@ import os
 from networks import Architecture
 from assert_gpu import assert_gpu
 import torchvision
-from metrics import IoU
 from mAP import calc_AP
-#device = assert_gpu()
+device = assert_gpu()
 
 def nms(boxes, scores, iou_threshold):
     # Sort the scores in descending order
@@ -74,18 +73,16 @@ def evaluate(model):
         predictions = []
         for patch in patch_loader:
             patch.to(device).float()
-            #predictions.append(model(patch))
-            x=0
-        #predictions = torch.tensor(predictions)
+            predictions.append(model(patch))
 
-        predictions = torch.rand(len(proposals), 60)
+        predictions = torch.cat(predictions)
 
         confidscore, catargmax = torch.max(predictions, dim=1)
 
         # remove backgrounds
-        catargmax = catargmax[catargmax!=60]
-        confidscore = confidscore[catargmax!=60]
-        proposals = proposals[catargmax!=60]
+        confidscore = confidscore[catargmax!=59]
+        proposals = proposals[catargmax!=59]
+        catargmax = catargmax[catargmax!=59]
 
         # change proposals from X,Y,W,H to X,Y,X2,Y2
         proposals[:,2] =  proposals[:,2] + proposals[:,0]
@@ -102,35 +99,35 @@ def evaluate(model):
             proposal_inds  = nms(cat_proposals,cat_confidence,iou_threshold=0.5)
             cat_proposals  = cat_proposals[proposal_inds]
             cat_confidence = cat_confidence[proposal_inds]
+            
+            if len(cat_confidence)>0:
 
-            # check which bb are true detections
-            iou_threshold = 0.5
-            true = true_bb[true_cat==cat+1]
-            if len(true)==0:
-                cat_true = torch.tensor([0]*len(cat_proposals))
-            else:
-                iou_bb = torchvision.ops.box_iou(cat_proposals, true_bb[true_cat==cat+1])
-                cat_true = iou_bb.max(1)>iou_threshold
-            # 
-            cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence[proposal_inds]])
-            cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
+                # check which bb are true detections
+                iou_threshold = 0.5
+                true = true_bb[true_cat==cat+1]
+                if len(true)==0:
+                    cat_true = torch.tensor([0]*len(cat_proposals))
+                else:
+                    iou_bb = torchvision.ops.box_iou(cat_proposals, true_bb[true_cat==cat+1])
+                    cat_true = iou_bb.max(1)[0]>iou_threshold
+                # 
+                cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence])
+                cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
 
     calc_AP(cat_scores, cat_trues)
 
 
 if __name__ == '__main__':
 
-    """
     modelpath = os.path.join("models","restfull_netowrk.pdf")
     architecture = Architecture.from_string("resnet18")
     
     model = architecture.create_network()
     model.load_state_dict(torch.load(modelpath))
-	model.to(device)
-    """
+    model.to(device)
 
-    model = None
-    evaluate(model)
+    with torch.no_grad():
+        evaluate(model)
 
 
 
