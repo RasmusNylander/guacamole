@@ -37,14 +37,14 @@ def evaluate_classification(
 		loss = torch.empty(len(test_loader))
 
 		for batch_number, (data, target) in enumerate(test_loader):
-			data, target = data.to(device), target.to(device)
+			data, target = data.to(device).float(), target.to(device).float()
 
 			output = model(data)
 			loss[batch_number] = loss_function(output, target).cpu().item()
 
 	loss = loss.mean().item()
 
-	return EvalResult(loss)
+	return ClassificationEvalResult(loss)
 
 
 def train(
