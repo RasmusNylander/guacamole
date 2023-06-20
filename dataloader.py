@@ -174,6 +174,20 @@ def collate(batch: list[tuple[Tensor, Tensor, Tensor]]) -> list[list[Tensor]]:  
 	categories = [item[2] for item in batch]
 	return [image, bboxs, categories]
 
+@torch.jit.script
+def clamp_bboxs(bboxses: Tensor, image_size: Tensor) -> Tensor:
+	bbox_min_width = 6
+
+	x, y, w, h = bboxses[:, 0], bboxses[:, 1], bboxses[:, 2], bboxses[:, 3]
+	x = x.clamp(0, image_size[0] - bbox_min_width - 1)
+	y = y.clamp(0, image_size[1] - bbox_min_width - 1)
+
+	x2, y2 = x + w, y + h
+	x2 = x2.clamp(x + bbox_min_width, image_size[0])
+	y2 = y2.clamp(y + bbox_min_width, image_size[1])
+
+	return torch.stack([x, y, x2, y2], dim=1)
+
 
 class Proposals(torch.utils.data.Dataset):
 	BACKGROUND_INDEX = 60
@@ -230,15 +244,18 @@ class Proposals(torch.utils.data.Dataset):
 		proposal = proposal.int()
 		return proposal, category
 
-
 	def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
 		taco_index = idx // Proposals.PROPOSALS_PER_IMAGE
 
 		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
 		image = torchvision.io.read_image(image_path)
 
+		proposal_min_width = 6
+		image_width = 600
 		proposal, category = self.sample_index(idx)
-		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+
+		coordinates = clamp_bboxs(proposal.unsqueeze(dim=0), torch.tensor([600, 600]))
+		x, y, x2, y2 = coordinates[0, 0], coordinates[0, 1], coordinates[0, 2], coordinates[0, 3]
 
 		while x2 - x < 6 or y2 - y < 6:
 			print("patch too small, resampling", file=sys.stderr)
@@ -262,7 +279,7 @@ def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], 
 		validation_dataset, test_dataset = Proposals(ds_type=DatasetType.valid), TACO(ds_type=DatasetType.test)
 
 	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
+	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
 
 	return train_loader, validation_loader, test_loader
