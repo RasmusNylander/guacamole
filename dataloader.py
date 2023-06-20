@@ -149,7 +149,7 @@ class TACO(torch.utils.data.Dataset):
 				bboxs[i][2] = image.shape[2]
 				print("width adjusted", sys.stderr)
 			if bboxs[i][3] > image.shape[1]:
-				bboxs[i][3] > image.shape[1]
+				bboxs[i][3] = image.shape[1]
 				print("height adjusted", sys.stderr)
 
 		x_fraction = self.resize_to / image.shape[2]
@@ -160,15 +160,12 @@ class TACO(torch.utils.data.Dataset):
 		resized_bboxs = bboxs * scaler
 		return resized_image, resized_bboxs
 
-	def get_img_id_by_idx(self, idx):
-		return img_id
-
 
 	def __getitem__(self, id:int) -> tuple:
 		tacoitem = self.tacoitems[self.img_ids[id]]
 		image = torchvision.io.read_image(tacoitem.path)
 		reized_image, resized_bboxs = self.resize(image, tacoitem.bboxs) 
-		return reized_image, resized_bboxs, tacoitem.categories
+		return reized_image, resized_bboxs, tacoitem.categories,
 
 
 def collate(batch: list[tuple[Tensor, Tensor, Tensor]]) -> list[list[Tensor]]:  # Must be here, otherwise it cannot be pickled
@@ -178,31 +175,28 @@ def collate(batch: list[tuple[Tensor, Tensor, Tensor]]) -> list[list[Tensor]]:  
 	return [image, bboxs, categories]
 
 
-def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
-	if dataset_path_override is not None:
-		train_dataset = TACO(dataset_path_override, DatasetType.train)
-		validation_dataset, test_dataset = TACO(dataset_path_override, DatasetType.valid), TACO(dataset_path_override, DatasetType.test)
-	else:
-		train_dataset = TACO(ds_type=DatasetType.train)
-		validation_dataset, test_dataset = TACO(ds_type=DatasetType.valid), TACO(ds_type=DatasetType.test)
-
-	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers, collate_fn=collate)
-	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
-	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
-
-	return train_loader, validation_loader, test_loader
-
-
-
 class Proposals(torch.utils.data.Dataset):
-	def __init__(self):
-		self.taco = TACO(ds_type=DatasetType.train)
-		self.bboxs = torch.load("proposals/bounding_boxes_quality_and_true.pt")[TACO.img_ids] # both proposal and gt
-		self.cumsum_proposal_ids = np.cumsum([len(x) for x in self.bboxs])
-		self.categories = torch.load("proposals/bounding_boxes_qual_categories_and true.pt")[TACO.img_ids] # both proposal and gt
+	BACKGROUND_INDEX = 60
+	PROPOSALS_PER_IMAGE = 4
+
+	def __init__(self, root_dir: PathLike = "/dtu/datasets1/02514/data_wastedetection"):
+		self.taco = TACO(root_dir, ds_type=DatasetType.train)
+		self.bboxs = torch.load("proposals/bounding_boxes_quality_X.pt") # both proposal and gt
+		self.bboxs = [self.bboxs[index] for index in self.taco.img_ids]
+		# self.cumsum_proposal_ids = np.cumsum([len(x) for x in self.bboxs])
+		self.categories = torch.load("proposals/bounding_boxes_qual_categories_X.pt") # both proposal and gt
+		self.categories = [self.categories[index] for index in self.taco.img_ids]
+
+		# proper_bboxes = []
+		# propers_categories = []
+		# for image, category in zip(self.bboxs, self.categories):
+		# 	proper_bboxes.append(image[(image[:, 2] > 2) * (image[:, 3] > 2)])
+		# 	propers_categories.append(category[(image[:, 2] > 2) * (image[:, 3] > 2)])
+		# self.bboxs = proper_bboxes
+		# self.categories = propers_categories
 
 	def __len__(self):
-		return len(self.categories.flatten())
+		return Proposals.PROPOSALS_PER_IMAGE*len(self.taco)
 
 	def idx_to_image_and_proposal_id(self, idx):
 		image_idx = self.cumsum(self.cumsum_proposal_ids <= idx).argmax()
@@ -210,30 +204,84 @@ class Proposals(torch.utils.data.Dataset):
 
 		return image_idx, proposal_idx
 
-	def __getitem__(self, idx):
-		image_idx, proposal_idx = self.idx_to_image_and_proposal_id(idx)
+	def sample_index(self, index: int) -> tuple[Tensor, Tensor]:
+		taco_index = index // Proposals.PROPOSALS_PER_IMAGE
+		proposals = self.bboxs[taco_index]
+		proposal_categories = self.categories[taco_index]
 
-		bbox = self.bboxs[image_idx][proposal_idx]
-		category = self.categories[image_idx][proposal_idx]
+		if index % 4 == 0:
+			mask = proposal_categories == self.BACKGROUND_INDEX
+			proposal_categories = proposal_categories - 1 # background is 60, but we want 59
+		else:
+			mask = proposal_categories != self.BACKGROUND_INDEX
 
-		image = torchvision.io.read_image(self.taco[image_idx].path)
-		patch = image[:, bbox[0] : bbox[0] + bbox[2], bbox[1] : bbox[1] + bbox[3]]
+		proposals = proposals[mask]
+		proposal_categories = proposal_categories[mask]
+
+		proposal_index = torch.randint(0, proposals.shape[0], (1,)).item()
+		proposal = proposals[proposal_index]
+		category = proposal_categories[proposal_index]
+
+		if taco_index == 374 and index % 4 != 0:
+			# The little fucker starts at y=-1
+			# TODO: catch all the little duckers
+			return torch.tensor([0, 0, 600, 600]), torch.tensor(59)
+
+		proposal = proposal.int()
+		return proposal, category
+
+
+	def __getitem__(self, idx: int) -> tuple[Tensor, Tensor]:
+		taco_index = idx // Proposals.PROPOSALS_PER_IMAGE
+
+		image_path = self.taco.tacoitems[self.taco.img_ids[taco_index]].path
+		image = torchvision.io.read_image(image_path)
+
+		proposal, category = self.sample_index(idx)
+		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+
+		while x2 - x < 6 or y2 - y < 6:
+			print("patch too small, resampling", file=sys.stderr)
+			print(proposal.numpy())
+			proposal, category = self.sample_index(idx)
+			x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
+
+		patch = image[:, x:x2, y:y2]
+		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
+		category = torch.nn.functional.one_hot(category, num_classes=60)
 
 		return patch, category
 
 
+def make_dataloader(batch_size: int, dataset_path_override: Optional[PathLike], num_workers=3) -> tuple[DataLoader, DataLoader, DataLoader]:
+	if dataset_path_override is not None:
+		train_dataset = Proposals(dataset_path_override)
+		validation_dataset, test_dataset = TACO(dataset_path_override, DatasetType.valid), TACO(dataset_path_override, DatasetType.test)
+	else:
+		train_dataset = Proposals()
+		validation_dataset, test_dataset = TACO(ds_type=DatasetType.valid), TACO(ds_type=DatasetType.test)
 
+	train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+	validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
+	test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers, collate_fn=collate)
 
-
-
-
+	return train_loader, validation_loader, test_loader
 
 
 if __name__ == '__main__':
+	tep = Proposals("D:\\data")
+	# tep = Proposals()
+	print(tep[0][0].shape)
+	print(tep[0][1].shape)
+	print("-------------------------------")
+
 	datapath = None
 	# datapath = "D:\\data"
 
-	dataset = TACO()
+	if datapath is not None:
+		dataset = TACO(datapath)
+	else:
+		dataset = TACO()
 	id = 0
 	image, bboxs, cats = dataset[id]
 	print(bboxs)

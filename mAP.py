@@ -78,6 +78,10 @@ if __name__ == '__main__':
                                                 thresholds=thresholds)
 
     f1 = f1_score(precisions, recalls)  #Calclate the buest tradeoff point from the pairs of precisions and recalls.
+    #One category situation
+    AP = AP_cal(precisions, recalls)
+    print(AP)
+    
     
     #Store the image of precision-recall curve
     plt.plot(recalls, precisions, linewidth=4, color="red", zorder=0)
@@ -87,15 +91,13 @@ if __name__ == '__main__':
 
     plt.xlabel("Recall", fontsize=12, fontweight='bold')
     plt.ylabel("Precision", fontsize=12, fontweight='bold')
-    plt.legend(loc="upper right")
+    plt.legend(['AP value: ' + "%.4f" % AP, 'Maximum f1-score: ' + str(max(f1))], loc="upper right")
     plt.title("Precision-Recall Curve", fontsize=15, fontweight="bold")
     os.makedirs(path, exist_ok=True)
-    plt.savfig(f"{path}/test_{num}.png")
+    plt.savefig(f"{path}/test_{num}.png")
 
-    #One category situation
-    AP = AP_cal(precisions, recalls)
-    print(AP)
     
+    '''
     #IoU related testing
     gt_box = [320, 220, 680, 900] #Pretend the position of ground box will be performed a list
     pred_box = [500, 320, 550, 700]  #Pretend the position of prediction box will be performed a list
@@ -106,7 +108,7 @@ if __name__ == '__main__':
     l_APs = [] # The list of various APs
     mAP = mAP_cal(l_APs)
     print('Mean Average Precision: ' + str(mAP))
-    
+    '''
     
     
     
