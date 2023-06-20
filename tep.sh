@@ -1,13 +1,14 @@
 MODELS="resnet18 resnet152"
+QUEUE="gpua100"
 
 for MODEL in $MODELS
 do
 	
-	n="$MODEL"
+	n="$MODEL-$QUEUE"
 	
 	config="#!/bin/bash
 
-	#BSUB -q gpua100
+	#BSUB -q $QUEUE
 	#BSUB -J $n
 	#BSUB -o outs/$n_%J.out
 	#BSUB -n 1

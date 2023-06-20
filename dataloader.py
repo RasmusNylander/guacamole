@@ -232,9 +232,8 @@ class Proposals(torch.utils.data.Dataset):
 		proposals = self.bboxs[taco_index]
 		proposal_categories = self.categories[taco_index]
 
-		if index % 4 == 0:
+		if index % 4 != 0:
 			mask = proposal_categories == self.BACKGROUND_INDEX
-			proposal_categories = proposal_categories - 1 # background is 60, but we want 59
 		else:
 			mask = proposal_categories != self.BACKGROUND_INDEX
 
