@@ -188,6 +188,8 @@ def clamp_bboxs(bboxses: Tensor, image_size: Tensor) -> Tensor:
 	return torch.stack([x, y, x2, y2], dim=1)
 
 
+def
+
 class Proposals(torch.utils.data.Dataset):
 	BACKGROUND_INDEX = 60
 	PROPOSALS_PER_IMAGE = 4
@@ -337,50 +339,6 @@ def read_image_and_rotate(image_path):
 				I = I.rotate(90,expand=True)
 
 	return torchvision.transforms.functional.to_tensor(I)
-
-if __name__ == '__main__':
-	tep = Proposals("D:\\data")
-	# tep = Proposals()
-	print(tep[0][0].shape)
-	print(tep[0][1].shape)
-	print("-------------------------------")
-
-	datapath = None
-	# datapath = "D:\\data"
-
-	if datapath is not None:
-		dataset = TACO(datapath)
-	else:
-		dataset = TACO()
-	id = 0
-	image, bboxs, cats = dataset[id]
-	print(bboxs)
-
-	import matplotlib.pyplot as plt
-	from matplotlib.patches import Rectangle
-
-	fig,ax = plt.subplots(1)
-	plt.imshow(image.permute(1, 2, 0).numpy())
-	x, y, w, h = bboxs[0].numpy()
-	rect = Rectangle((x,y),w,h,linewidth=2, facecolor='none', edgecolor='orange')
-	ax.add_patch(rect)
-	plt.savefig("try_resized.png")
-
-	print('example with variable size inpuut (bboxs / categories)')
-
-	def collate(batch: list) -> list:
-		image = [item[0] for item in batch]
-		bboxs = [item[1] for item in batch]
-		categories = [item[2] for item in batch]
-		return [image, bboxs, categories]
-
-	batch_size = 64
-	# train_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, num_workers=3, collate_fn=collate)
-	#train_loader, _, _ = make_dataloader(batch_size, datapath, 1)
-
-
-	#for batch_img, batch_bboxs, batch_cats in train_loader:
-#		print(len(batch_img), batch_img[0].shape, batch_bboxs[0].shape, batch_cats[0].shape)
 
 
 	
