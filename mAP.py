@@ -66,7 +66,7 @@ def Precision_recall_curve_plot(precisions,recalls, AP, path, num):
     os.makedirs(path, exist_ok=True)
     plt.savefig(f"{path}/test_{num}.png")
     
-def calc_mAP(group_pred_scores, group_y_true):
+def calc_AP(group_pred_scores, group_y_true):
     path = './precision-recall_curve'
     APs = []
     
@@ -100,5 +100,6 @@ def calc_mAP(group_pred_scores, group_y_true):
     '''
     # mAP: Mean Average Precision (for multiple categories)
     mAP = mAP_cal(APs)
-    return mAP
+    print('Calculated mAP: ' ,mAP)
+    return APs
     
