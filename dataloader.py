@@ -265,7 +265,7 @@ class Patches(torch.utils.data.Dataset):
 
 	def __init__(self, image: Tensor, proposals: Tensor):
 		self.proposals = torch.squeeze(proposals)
-		self.image =  torch.squeeze(image)
+		self.image = torch.squeeze(image)
 
 	def __len__(self):
 		return len(self.proposals)
@@ -275,20 +275,6 @@ class Patches(torch.utils.data.Dataset):
 
 		coordinates = clamp_bboxs(proposal.unsqueeze(dim=0), torch.tensor([600, 600]))
 		x, y, x2, y2 = coordinates[0, 0], coordinates[0, 1], coordinates[0, 2], coordinates[0, 3]
-
-		while x2 - x < 6:
-			print("patch too small, resampling", file=sys.stderr)
-			print(proposal.numpy())
-			proposal = self.idx_to_image_and_proposal_id(idx)
-			x2 +=1
-			x  -=2
-
-		while y2 - y < 6:
-			print("patch too small, resampling", file=sys.stderr)
-			print(proposal.numpy())
-			proposal = self.idx_to_image_and_proposal_id(idx)
-			y2 +=1
-			y  -=2
 
 		patch = self.image[:, y:y2, x:x2]
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
