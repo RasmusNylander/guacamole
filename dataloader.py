@@ -252,7 +252,7 @@ class Proposals(torch.utils.data.Dataset):
 		coordinates = clamp_bboxs(proposal.unsqueeze(dim=0), torch.tensor([image_width, image_width]))
 		x, y, x2, y2 = coordinates[0, 0], coordinates[0, 1], coordinates[0, 2], coordinates[0, 3]
 
-		patch = image[:, x:x2, y:y2]
+		patch = image[:, y:y2, x:x2]
 		try:
 			patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		except Exception as e:
@@ -302,7 +302,7 @@ class Patches(torch.utils.data.Dataset):
 			y2 +=1
 			y  -=2
 
-		patch = self.image[:, x:x2, y:y2]
+		patch = self.image[:, y:y2, x:x2]
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 		return patch
 
