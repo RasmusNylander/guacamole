@@ -60,7 +60,6 @@ def evaluate(model):
 
     cat_scores = [torch.tensor([]) for _ in range(59)]
     cat_trues = [torch.tensor([]) for _ in range(59)]
-    #for img_num, (proposals, image, true_bb, true_cat) in enumerate(tqdm(img_loader, leave=False, unit="batches", position=1)):
     for (proposals, image, true_bb, true_cat) in img_loader:
 
         image = image.squeeze()
