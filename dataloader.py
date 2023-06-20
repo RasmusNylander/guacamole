@@ -25,8 +25,6 @@ class DatasetType(Enum):
 	valid = 3
 
 
-
-
 class TACOItem():
 	def __init__(self, path: str, bboxs: Tensor = None, categories: Tensor = None):              
 		self.path = path
@@ -284,19 +282,19 @@ class Patches(torch.utils.data.Dataset):
 		proposal = self.proposals[idx]
 		x, y, x2, y2 = proposal[0], proposal[1], proposal[0] + proposal[2], proposal[1] + proposal[3]
 
-		while x2 - x < 6 or y2 - y < 6:
+		while x2 - x < 6:
 			print("patch too small, resampling", file=sys.stderr)
 			print(proposal.numpy())
 			proposal = self.idx_to_image_and_proposal_id(idx)
 			x2 +=1
-			x  -=1
+			x  -=2
 
 		while y2 - y < 6:
 			print("patch too small, resampling", file=sys.stderr)
 			print(proposal.numpy())
 			proposal = self.idx_to_image_and_proposal_id(idx)
 			y2 +=1
-			y  -=1
+			y  -=2
 
 		patch = image[:, x:x2, y:y2]
 		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
