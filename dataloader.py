@@ -253,19 +253,7 @@ class Proposals(torch.utils.data.Dataset):
 		x, y, x2, y2 = coordinates[0, 0], coordinates[0, 1], coordinates[0, 2], coordinates[0, 3]
 
 		patch = image[:, y:y2, x:x2]
-		try:
-			patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
-		except Exception as e:
-			print("AAAAAAAAAAAAAAAAhhhhhhhhhhhh!!!!!!!!!", file=sys.stderr)
-			print(f"x: {x}, y: {y}, x2: {x2}, y2: {y2}", file=sys.stderr)
-			print(f"Image id: {self.taco.img_ids[taco_index]}", file=sys.stderr)
-			print(f"Image path: {image_path}", file=sys.stderr)
-			print(proposal.numpy())
-			print("--------------------------------------------------------------------------")
-			print(e)
-			print("--------------------------------------------------------------------------")
-			print(f"Patch size: {patch.shape}", file=sys.stderr)
-			exit(69420)
+		patch = torchvision.transforms.functional.resize(patch, size=(224, 224))
 
 		category = torch.nn.functional.one_hot(category, num_classes=60)
 
