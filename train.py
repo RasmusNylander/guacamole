@@ -36,7 +36,7 @@ def evaluate_classification(
 	with torch.no_grad():
 		loss = torch.empty(len(test_loader))
 
-		for batch_number, (data, target) in enumerate(test_loader):
+		for batch_number, (data, target) in enumerate(tqdm(test_loader, leave=False, unit="batches", position=1, desc="Evaluating")):
 			data, target = data.to(device).float(), target.to(device).float()
 
 			output = model(data)
