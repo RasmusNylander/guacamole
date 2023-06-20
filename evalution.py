@@ -60,7 +60,6 @@ def evaluate(model):
 
     cat_scores = [torch.tensor([]) for _ in range(59)]
     cat_trues = [torch.tensor([]) for _ in range(59)]
-    #for img_num, (proposals, image, true_bb, true_cat) in enumerate(tqdm(img_loader, leave=False, unit="batches", position=1)):
     for (proposals, image, true_bb, true_cat) in img_loader:
 
         image = image.squeeze()
@@ -72,10 +71,11 @@ def evaluate(model):
     
         predictions = []
         for patch in patch_loader:
-            patch.to(device).float()
+            patch = patch.to(device).float()
             predictions.append(model(patch))
 
-        predictions = torch.cat(predictions)
+        predictions = torch.cat(predictions).to('cpu')
+        predictions = torch.nn.functional.softmax(predictions)
 
         confidscore, catargmax = torch.max(predictions, dim=1)
 
@@ -100,21 +100,32 @@ def evaluate(model):
             cat_proposals  = cat_proposals[proposal_inds]
             cat_confidence = cat_confidence[proposal_inds]
             
-            if len(cat_confidence)>0:
+            
 
-                # check which bb are true detections
-                iou_threshold = 0.5
-                true = true_bb[true_cat==cat+1]
-                if len(true)==0:
-                    cat_true = torch.tensor([0]*len(cat_proposals))
-                else:
+            # check which bb are true detections
+            iou_threshold = 0.5
+            true = true_bb[true_cat==cat+1]
+            if len(true)==0:
+                cat_true = torch.tensor([0]*len(cat_proposals))
+            else:
+                if len(cat_confidence)>0:
                     iou_bb = torchvision.ops.box_iou(cat_proposals, true_bb[true_cat==cat+1])
                     cat_true = iou_bb.max(1)[0]>iou_threshold
-                # 
-                cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence])
-                cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
+                    missed = max(len(true) - sum(cat_true),0)
+                else:
+                    missed = len(true)
+                    cat_true = torch.tensor([],dtype=int)
+                
+                cat_scores[cat] = torch.cat([cat_scores[cat],torch.tensor([0]*missed)])
+                cat_trues[cat] = torch.cat([cat_trues[cat],torch.tensor([1]*missed)])
 
-    calc_AP(cat_scores, cat_trues)
+            cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence])
+            cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
+
+            
+
+    APs = calc_AP(cat_scores, cat_trues)
+    torch.save(APs,'APs1')
 
 
 if __name__ == '__main__':

@@ -10,10 +10,10 @@ def precision_recall_curve(y_true, pred_scores, thresholds):
     recalls = []
     
     for threshold in thresholds:
-        y_pred = ["positive" if score >= threshold else "negative" for score in pred_scores]
+        y_pred = [1 if score >= threshold else 0 for score in pred_scores]
         
-        precision = sklearn.metrics.precision_score(y_true=y_true, y_pred=y_pred, pos_label="positive")
-        recall = sklearn.metrics.recall_score(y_true=y_true, y_pred=y_pred, pos_label="positive")
+        precision = sklearn.metrics.precision_score(y_true=y_true, y_pred=y_pred, pos_label=1)
+        recall = sklearn.metrics.recall_score(y_true=y_true, y_pred=y_pred, pos_label=1)
         
         precisions.append(precision)
         recalls.append(recall)
@@ -75,7 +75,6 @@ def calc_AP(group_pred_scores, group_y_true):
         
         pred_scores = group_pred_scores[i].tolist() #TODO: The prediction input
         y_true = group_y_true[i].tolist() #TODO: Input the true
-        y_true = ["positive" if value == 1 else "negative" for value in y_true]
 
         
         thresholds = np.arange(start=0.2, stop=1.0, step=0.05)
@@ -90,7 +89,8 @@ def calc_AP(group_pred_scores, group_y_true):
         APs.append(AP)  # The list will contain various APs
         
         #Store the image of precision-recall curve
-        Precision_recall_curve_plot(precisions,recalls, AP, path, num, f1)
+        if AP>0:
+            Precision_recall_curve_plot(precisions,recalls, AP, path, num, f1)
          
     '''
     #IoU related testing
