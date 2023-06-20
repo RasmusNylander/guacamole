@@ -57,7 +57,7 @@ def save_model(state_dict: dict, name: str):
 	if not os.path.exists('models'):
 		os.makedirs('models')
 	savepath = f"models/{name}"
-	torch.save(model.state_dict(), savepath)
+	torch.save(state_dict, savepath)
 
 
 def train(
