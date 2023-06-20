@@ -11,15 +11,10 @@ def NMS_cal(input_tensor, scores):
     confidscore, _ = torch.max(scores, dim=1)
     catargmax = torch.argmax(scores, dim=1)
     threshold = 0.5
-    
-    for i in range(confidscore.size(0)):
-        prop = input_tensor[catargmax==1]
-        confid = confidscore
-        
-    #print(confidscore)
-    #print(catargmax)
-    print(input_tensor[catargmax==1])
-    #print(confidscore[catargmax==1])
+    prop = input_tensor[catargmax==1]
+    confid = confidscore[catargmax==1]
+    NMS = tv.nms(prop, confid, threshold)
+    print(NMS)
     
     '''
     combined_tensor = torch.cat((input_tensor, confidscore.unsqueeze(1), catargmax.unsqueeze(1)), dim=1)
