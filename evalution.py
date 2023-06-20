@@ -7,6 +7,7 @@ from networks import Architecture
 from assert_gpu import assert_gpu
 import torchvision
 from metrics import IoU
+from mAP import calc_AP
 #device = assert_gpu()
 
 def nms(boxes, scores, iou_threshold):
@@ -114,6 +115,7 @@ def evaluate(model):
             cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence[proposal_inds]])
             cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
 
+    calc_AP(cat_scores, cat_trues)
 
 
 if __name__ == '__main__':
