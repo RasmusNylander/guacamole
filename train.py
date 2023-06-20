@@ -21,31 +21,26 @@ from assert_gpu import assert_gpu
 device = assert_gpu()
 
 
-class EvalResult:
+class ClassificationEvalResult:
 
 	def __init__(self, loss: float):
 		self.loss = loss
 
 
-def evaluate(
+def evaluate_classification(
 		model: torch.nn.Module,
 		test_loader: torch.utils.data.DataLoader,
-		loss_function) -> EvalResult:
+		loss_function
+) -> EvalResult:
 	model.eval()
 	with torch.no_grad():
 		loss = torch.empty(len(test_loader))
 
-		for batch_number, (data, target, something) in enumerate(test_loader):
-			data, target, something = data.to(device), target.to(device), something.to(device)
+		for batch_number, (data, target) in enumerate(test_loader):
+			data, target = data.to(device), target.to(device)
 
 			output = model(data)
 			loss[batch_number] = loss_function(output, target).cpu().item()
-			for klass in range(60):
-				klass_one_hot = torch.zeros_like(output)
-				klass_one_hot[:, klass] = 1
-
-				# nms_mask = torvhvision.ops.nms(output, something)
-
 
 	loss = loss.mean().item()
 
@@ -82,21 +77,21 @@ def train(
 
 			train_loss_epoch[batch_number] = loss.item()
 
-		# validation_result = evaluate(model, validation_loader, loss_function)
-		# if validation_result.loss < best_loss and epoch > 10:
-		# 	best_loss = validation_result.loss
-		# 	state_dict_extractor = model.__class__()  # We do it this way because it's the easiest way to get the state dict to the cpu
-		# 	state_dict_extractor.load_state_dict(model.state_dict())
-		# 	best_model_state_dict = state_dict_extractor.state_dict()
-		#
-		# if with_logging:
-		# 	wandb.log({
-		# 				"train loss": train_loss_epoch.mean().item(),
-		# 				"validation loss": validation_result.loss,
-		# 			  })
+		validation_result = evaluate_classification(model, validation_loader, loss_function)
+		if validation_result.loss < best_loss and epoch > 10:
+			best_loss = validation_result.loss
+			state_dict_extractor = model.__class__()  # We do it this way because it's the easiest way to get the state dict to the cpu
+			state_dict_extractor.load_state_dict(model.state_dict())
+			best_model_state_dict = state_dict_extractor.state_dict()
 
-		# tqdm.write(
-		# 	f" Train loss: {round(train_loss_epoch.mean().item(), 3)}, Validation loss {round(validation_result.loss, 3)}")
+		if with_logging:
+			wandb.log({
+						"train loss": train_loss_epoch.mean().item(),
+						"validation loss": validation_result.loss,
+					  })
+
+		tqdm.write(
+			f" Train loss: {round(train_loss_epoch.mean().item(), 3)}, Validation loss {round(validation_result.loss, 3)}")
 
 		tqdm.write(
 			f" Train loss: {round(train_loss_epoch.mean().item(), 3)}")
