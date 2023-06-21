@@ -53,14 +53,15 @@ def calculate_iou(box, boxes):
 
     return iou
 
-def evaluate(model):
+def detect(model):
 
-    proposal_set = ProposalsEval(root_dir= "data_wastedetection",ds_type = DatasetType.train)
+    proposal_set = ProposalsEval(root_dir= "data_wastedetection",ds_type = DatasetType.test)
     img_loader = DataLoader(proposal_set, batch_size=1, shuffle=False, num_workers=1)
 
     cat_scores = [torch.tensor([]) for _ in range(59)]
     cat_trues = [torch.tensor([]) for _ in range(59)]
-    for (proposals, image, true_bb, true_cat) in img_loader:
+    for img_num, (proposals, image, true_bb, true_cat) in enumerate(img_loader):
+        print('Working on image ', img_num)
 
         image = image.squeeze()
         proposals = proposals.squeeze()
@@ -121,24 +122,35 @@ def evaluate(model):
 
             cat_scores[cat] = torch.cat([cat_scores[cat],cat_confidence])
             cat_trues[cat] = torch.cat([cat_trues[cat],cat_true])
+        
+        if img_num>10:
+            break
 
-            
-
-    APs = calc_AP(cat_scores, cat_trues)
-    torch.save(APs,'APs1')
+    return cat_scores, cat_trues
 
 
 if __name__ == '__main__':
 
-    modelpath = os.path.join("models","restfull_netowrk.pdf")
-    architecture = Architecture.from_string("resnet18")
+    modelpath = os.path.join("models","resnet152-gpua100")
+    architecture = Architecture.from_string("resnet152")
     
     model = architecture.create_network()
     model.load_state_dict(torch.load(modelpath))
     model.to(device)
 
     with torch.no_grad():
-        evaluate(model)
+        cat_scores,cat_trues = detect(model)
+    
+    save_dir = 'evaluation152'
+    if not os.path.exists(save_dir):
+        os.makedirs(save_dir)
+
+    torch.save(cat_scores,os.path.join(save_dir,'cat_scores'))
+    torch.save(cat_trues,os.path.join(save_dir,'cat_trues'))
+
+    APs = calc_AP(cat_scores, cat_trues)
+    torch.save(APs,os.path.join(save_dir,'APs'))
+
 
 
 
