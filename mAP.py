@@ -100,6 +100,7 @@ def calc_AP(group_pred_scores, group_y_true):
     print('IoU: {iou} \nIntersect: {intersect} \nUnion: {union}')
     '''
     # mAP: Mean Average Precision (for multiple categories)
+    torch.save
     mAP = mAP_cal(APs)
     print('Calculated mAP: ' ,mAP)
     return APs
