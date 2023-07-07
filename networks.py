@@ -26,9 +26,10 @@ class Architecture(Enum):
 			print(f"ERROR: Unknown architecture {self} in Architecture.__repr__", file=sys.stderr)
 		return str(self)
 
-	def from_string(s: str) -> Optional["Architecture"]:
+	@staticmethod
+	def from_string(string: str) -> Optional["Architecture"]:
 		for architecture in Architecture:
-			if s == str(architecture) or s == repr(architecture):
+			if string == str(architecture) or string == repr(architecture):
 				return architecture
 		return None
 
