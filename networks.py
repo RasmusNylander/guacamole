@@ -28,9 +28,15 @@ class Architecture(Enum):
 
 	@staticmethod
 	def from_string(string: str) -> Optional["Architecture"]:
+		matches = []
 		for architecture in Architecture:
 			if string == str(architecture) or string == repr(architecture):
 				return architecture
+			if str(architecture).lower().startswith(string.lower()) or repr(architecture).lower().startswith(string.lower()):
+				matches.append(architecture)
+		if len(matches) == 1:
+			return matches[0]
+
 		return None
 
 	def create_network(self) -> nn.Module:
@@ -42,7 +48,6 @@ class Architecture(Enum):
 			return ResNet152()
 		else:
 			raise NotImplementedError(f"Architecture {self} not implemented")
-
 
 class TransferNetwork(nn.Module):
 	def __init__(self):
