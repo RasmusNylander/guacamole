@@ -6,10 +6,10 @@ from dataloader import TACO,DatasetType
 
 iou_threshold   = 0.5
 resize_to       = 600
+DATA_ROOT= r"D:\data"
+PROPOSAL_DIR = r".\proposals"
 
-os.chdir('guacamole')
-root_dir=os.getcwd()
-anns_file_path = os.path.join(root_dir, 'annotations.json')
+anns_file_path = os.path.join(DATA_ROOT, 'annotations.json')
 with open(anns_file_path, 'r') as f:
 	dataset = json.loads(f.read())
 annotations = dataset['annotations']
@@ -20,13 +20,12 @@ ann_img_id  = torch.tensor([ann['image_id'] for ann in annotations])
 image_info  = dataset['images']
 img_hw      = torch.tensor([[img['height'],img['width']] for img in image_info])
 
-bb_file_path = os.path.join(root_dir, "bounding_boxes_fast.pt")
+bb_file_path = os.path.join(PROPOSAL_DIR, "bounding_boxes_fast.pt")
 proposals = torch.load(bb_file_path)
 
 
 print(len(torch.cat(proposals)))
 proposals_cat = []
-proposal_dir = os.path.join(root_dir,'proposals')
 num_obj = 0
 obj_found = 0
 true_boxes = []
