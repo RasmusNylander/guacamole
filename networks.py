@@ -15,14 +15,10 @@ class Architecture(Enum):
 		return self.value
 
 	def from_string(s: str) -> Optional["Architecture"]:
-		if s == Architecture.ALEXNET.value:
-			return Architecture.ALEXNET
-		elif s == Architecture.RESNET18.value:
-			return Architecture.RESNET18
-		elif s == Architecture.RESNET152.value:
-			return Architecture.RESNET152
-		else:
-			return None
+		for architecture in Architecture:
+			if s == str(architecture):
+				return architecture
+		return None
 
 
 	def create_network(self) -> nn.Module:
