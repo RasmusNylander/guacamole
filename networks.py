@@ -1,3 +1,4 @@
+import sys
 from enum import Enum
 from typing import Optional
 
@@ -13,6 +14,17 @@ class Architecture(Enum):
 
 	def __str__(self):
 		return self.value
+
+	def __repr__(self):
+		if self == Architecture.ALEXNET:
+			return "AlexNet"
+		elif self == Architecture.RESNET18:
+			return "ResNet18"
+		elif self == Architecture.RESNET152:
+			return "ResNet152"
+		else:
+			print(f"ERROR: Unknown architecture {self} in Architecture.__repr__", file=sys.stderr)
+		return str(self)
 
 	def from_string(s: str) -> Optional["Architecture"]:
 		for architecture in Architecture:
