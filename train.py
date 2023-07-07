@@ -177,10 +177,16 @@ def run(
 
 
 if __name__ == "__main__":
+	def convert_to_architecture_repr_or_identity(string: str) -> str:  # We want to use repr for the user input choices
+		architecture = Architecture.from_string(string)
+		return repr(architecture) if architecture is not None else string
+
 	parser = argparse.ArgumentParser(description='Train a model on a dataset.')
 	parser.add_argument('--name', type=str, help='Name of the run. If not specified, a timestamp will be used.')
-	parser.add_argument('-m', '--model', type=str, help='Model to use', required=True,
-						choices=[str(model) for model in Architecture])
+	parser.add_argument('-m', '--model',
+						type=convert_to_architecture_repr_or_identity,
+						help='Model to use', required=True,
+						choices=[repr(model) for model in Architecture])
 	parser.add_argument('--data_path', type=str, help='Path to the dataset', default=None)
 
 	parser.add_argument('--logging', action="store_true", help='Whether to log to wandb')
@@ -204,7 +210,6 @@ if __name__ == "__main__":
 		print(f"No name provided, using timestamp '{name}'")
 
 	architecture = Architecture.from_string(args.model)
-
 
 	with_logging = args.logging
 	if with_logging:
