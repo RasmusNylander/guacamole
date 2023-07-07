@@ -183,7 +183,7 @@ if __name__ == "__main__":
 						choices=[str(model) for model in Architecture])
 	parser.add_argument('--data_path', type=str, help='Path to the dataset', default=None)
 
-	parser.add_argument('--logging', type=bool, help='Whether to log to wandb', default=False)
+	parser.add_argument('--logging', action="store_true", help='Whether to log to wandb')
 
 	parser.add_argument('--epochs', type=int, help='Number of epochs', default=50)
 	parser.add_argument('--batch_size', type=int, help='Batch size', default=32)
