@@ -30,7 +30,7 @@ proposal_dir = os.path.join(root_dir,'proposals')
 num_obj = 0
 obj_found = 0
 true_boxes = []
-for img_id in range(len(proposals)):
+for img_id, image_proposals in enumerate(proposals):
 
     true_bb = ann_bb[ann_img_id==img_id]
     cat_bb  = ann_cat[ann_img_id==img_id]
@@ -44,7 +44,7 @@ for img_id in range(len(proposals)):
     true_boxes.append(true_bb)
     # proposals[img_id] = torch.cat([proposals[img_id],true_bb])
 
-    iou_bb = IoU(proposals[img_id],true_bb)
+    iou_bb = IoU(image_proposals, true_bb)
 
     prop_cat = iou_bb.argmax(1) #prop_cat = cat_bb[iou_bb.argmax(1)]
     prop_cat[iou_bb.max(1)[0]<iou_threshold] = 60
