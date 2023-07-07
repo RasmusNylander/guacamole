@@ -28,10 +28,9 @@ class Architecture(Enum):
 
 	def from_string(s: str) -> Optional["Architecture"]:
 		for architecture in Architecture:
-			if s == str(architecture):
+			if s == str(architecture) or s == repr(architecture):
 				return architecture
 		return None
-
 
 	def create_network(self) -> nn.Module:
 		if self == Architecture.ALEXNET:
